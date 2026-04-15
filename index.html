@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MLP Neuron Activations &mdash; Llama-3.1-8B Layer 18</title>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem 2rem 4rem;
+  color: #333;
+  background: #fafaf8;
+  line-height: 1.6;
+}
+
+h1 { font-size: 1.8rem; font-weight: normal; margin-bottom: 0.25rem; }
+.subtitle { color: #666; font-size: 1.05rem; margin-bottom: 1.5rem; }
+
+/* Controls */
+.controls {
+  display: flex;
+  gap: 1.2rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+  padding: 0.8rem 1rem;
+  background: #f0efeb;
+  border-radius: 6px;
+}
+.control-group { display: flex; align-items: center; gap: 0.4rem; }
+.control-group label { font-size: 0.85rem; color: #555; white-space: nowrap; }
+select {
+  font-family: inherit;
+  font-size: 0.9rem;
+  padding: 0.3rem 0.6rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+}
+
+/* Main layout */
+.main-content {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+/* Heatmap panel */
+.heatmap-panel { position: relative; }
+.axis-label-x, .axis-label-y {
+  font-size: 0.7rem;
+  fill: #555;
+}
+.axis-title {
+  font-size: 0.8rem;
+  fill: #444;
+  font-style: italic;
+}
+
+
+/* Heatmap sections */
+.heatmap-section { margin-bottom: 1.5rem; }
+.heatmap-section-title {
+  font-size: 0.9rem;
+  color: #555;
+  font-style: italic;
+  margin-bottom: 0.3rem;
+  /* offset to center over the plot area, not the full canvas */
+  padding-left: 80px;
+  padding-right: 10px;
+  text-align: center;
+}
+
+/* Secondary heatmaps (Gate & Up) */
+.secondary-heatmaps { margin-top: 1.5rem; }
+.collapsible-header {
+  cursor: pointer;
+  user-select: none;
+  font-size: 0.95rem;
+  color: #555;
+  padding: 0.5rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.collapsible-header:hover { color: #333; }
+.toggle-arrow {
+  display: inline-block;
+  font-size: 0.7rem;
+  transition: transform 0.15s;
+}
+.toggle-arrow.open { transform: rotate(90deg); }
+.secondary-grid {
+  display: grid;
+  grid-template-columns: auto auto auto;
+  gap: 0;
+  margin-top: 0.5rem;
+  align-items: start;
+  justify-content: center;
+}
+.secondary-grid .multiply-sign {
+  font-size: 1.8rem;
+  color: #999;
+  padding: 0 1rem;
+  /* center, then shift up to account for title/legend/axis weight at bottom */
+  align-self: center;
+  margin-bottom: 4rem;
+}
+
+/* Circle panel */
+.circle-panel {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 1rem;
+  background: #fcfcfa;
+  min-height: 420px;
+}
+.circle-panel h3 {
+  font-size: 1rem;
+  font-weight: normal;
+  margin-bottom: 0.5rem;
+  color: #444;
+}
+.circle-hint {
+  font-size: 0.8rem;
+  color: #999;
+  font-style: italic;
+  text-align: center;
+  margin-top: 1rem;
+}
+#circle-svg { display: block; margin: 0 auto; }
+
+/* Tooltip */
+.tooltip {
+  position: absolute;
+  background: rgba(0,0,0,0.85);
+  color: white;
+  padding: 5px 9px;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  font-family: 'Menlo', 'Consolas', monospace;
+  pointer-events: none;
+  z-index: 100;
+  white-space: nowrap;
+  display: none;
+}
+
+/* Prompt display */
+.prompt-display {
+  margin-top: 1.5rem;
+  padding: 1rem 1.2rem;
+  background: #f5f5f0;
+  border-left: 3px solid #8b7355;
+  border-radius: 0 4px 4px 0;
+}
+.prompt-display .prompt-text {
+  font-family: 'Menlo', 'Consolas', monospace;
+  font-size: 0.88rem;
+  white-space: pre-wrap;
+  margin-bottom: 0.4rem;
+  color: #333;
+}
+.prompt-display .prompt-meta {
+  font-size: 0.82rem;
+  color: #777;
+}
+.prompt-display .prompt-meta strong { color: #555; }
+
+/* Loading */
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  color: #999;
+  font-style: italic;
+}
+</style>
+</head>
+<body>
+
+<h1>MLP Neuron Activation Explorer</h1>
+<p class="subtitle">Llama-3.1-8B &middot; Layer 18 &middot; Modular Arithmetic Neurons</p>
+
+<div class="controls">
+  <div class="control-group">
+    <label for="task-select">Task</label>
+    <select id="task-select"></select>
+  </div>
+  <div class="control-group">
+    <label for="neuron-select">Neuron</label>
+    <select id="neuron-select"></select>
+  </div>
+</div>
+
+<div class="main-content">
+  <div class="heatmap-panel" id="heatmap-combined">
+    <div class="loading" id="loading-msg">Loading data&hellip;</div>
+  </div>
+
+  <div class="circle-panel">
+    <h3>Down-Projection &rarr; Fourier Subspace</h3>
+    <svg id="circle-svg" width="350" height="350"></svg>
+    <p class="circle-hint" id="circle-hint">Click a heatmap cell to see activation-scaled projections</p>
+  </div>
+</div>
+
+<div class="prompt-display" id="prompt-display">
+  <div class="prompt-text" id="prompt-text"></div>
+  <div class="prompt-meta" id="prompt-meta"><em style="color:#999">Hover or click a heatmap cell to see specific forward pass activations</em></div>
+</div>
+
+<div class="secondary-heatmaps">
+  <div class="collapsible-header" id="secondary-toggle">
+    <span class="toggle-arrow" id="toggle-arrow">&#9654;</span> Gate &amp; Up Activations
+  </div>
+  <div class="collapsible-content" id="secondary-content" style="display:none">
+    <div class="secondary-grid">
+      <div id="heatmap-gate"></div>
+      <div class="multiply-sign">&times;</div>
+      <div id="heatmap-up"></div>
+    </div>
+  </div>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+// ── State ──
+const state = {
+  task: "months",
+  neuron: 8859,
+  taskDataCache: {},
+  neuronsData: null,
+  clickedCell: null,  // {row, col} — locked by click
+  hoveredCell: null,  // {row, col} — follows mouse
+};
+
+// ── Heatmap sizing ──
+const margin = { top: 10, right: 10, bottom: 60, left: 80 };
+const maxCanvasW = 640;
+const maxCanvasH = 500;
+
+// ── Color interpolators ──
+function getColorScale(actType, data2d) {
+  const flat = data2d.flat();
+  const maxAbs = d3.max(flat, d => Math.abs(d));
+  const maxVal = d3.max(flat);
+  const minVal = d3.min(flat);
+
+  if (actType === "gate") {
+    return d3.scaleSequential(d3.interpolateBlues).domain([-0.3, Math.max(maxAbs, 0.1)]);
+  } else if (actType === "up") {
+    const bound = Math.max(maxAbs, 0.1);
+    return d3.scaleDiverging(d3.interpolatePRGn).domain([-bound, 0, bound]);
+  } else {
+    const bound = Math.max(maxAbs, 0.1);
+    return d3.scaleDiverging(d3.interpolatePiYG).domain([-bound, 0, bound]);
+  }
+}
+
+// ── Data loading ──
+async function loadNeuronsData() {
+  const resp = await fetch("data/neurons.json");
+  state.neuronsData = await resp.json();
+}
+
+async function loadTaskData(task) {
+  if (state.taskDataCache[task]) return state.taskDataCache[task];
+  const resp = await fetch(`data/${task}.json`);
+  const data = await resp.json();
+  state.taskDataCache[task] = data;
+  return data;
+}
+
+// ── Populate dropdowns ──
+function populateDropdowns() {
+  const nd = state.neuronsData;
+
+  // Task dropdown
+  const taskSel = document.getElementById("task-select");
+  nd.tasks.forEach(t => {
+    const opt = document.createElement("option");
+    opt.value = t;
+    opt.textContent = t.charAt(0).toUpperCase() + t.slice(1);
+    if (t === state.task) opt.selected = true;
+    taskSel.appendChild(opt);
+  });
+
+  // Neuron dropdown grouped by modulo
+  populateNeuronDropdown();
+}
+
+function populateNeuronDropdown() {
+  const nd = state.neuronsData;
+  const neuronSel = document.getElementById("neuron-select");
+  neuronSel.innerHTML = "";
+
+  const modOrder = ["mod_2", "mod_5", "mod_10", "mod_20", "mod_50", "mod_100"];
+  modOrder.forEach(modKey => {
+    const neurons = nd.neurons_by_modulo[modKey];
+    if (!neurons || neurons.length === 0) return;
+    const group = document.createElement("optgroup");
+    group.label = modKey.replace("_", " ");
+    neurons.forEach(nid => {
+      const opt = document.createElement("option");
+      opt.value = nid;
+      opt.textContent = `Neuron ${nid}`;
+      if (nid === state.neuron) opt.selected = true;
+      group.appendChild(opt);
+    });
+    neuronSel.appendChild(group);
+  });
+}
+
+// ── Get modulo group for a neuron ──
+function getModGroup(neuronId) {
+  const nd = state.neuronsData;
+  for (const [modKey, neurons] of Object.entries(nd.neurons_by_modulo)) {
+    if (neurons.includes(neuronId)) return modKey;
+  }
+  return null;
+}
+
+// ── Word-to-number parser ──
+const _ones = {one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9};
+const _teens = {ten:10,eleven:11,twelve:12,thirteen:13,fourteen:14,fifteen:15,sixteen:16,seventeen:17,eighteen:18,nineteen:19};
+const _tens = {twenty:20,thirty:30,forty:40,fifty:50};
+
+function parseNum(s) {
+  const n = parseInt(s);
+  if (!isNaN(n)) return n;
+  if (_ones[s]) return _ones[s];
+  if (_teens[s]) return _teens[s];
+  if (_tens[s]) return _tens[s];
+  const parts = s.split('-');
+  if (parts.length === 2) return (_tens[parts[0]] || 0) + (_ones[parts[1]] || 0);
+  return NaN;
+}
+
+// ── Compute answer for a cell ──
+function getAnswer(row, col) {
+  const taskData = state.taskDataCache[state.task];
+  const inps = taskData.inps;
+  const nums = taskData.nums;
+  const task = state.task;
+  const numVal = parseNum(nums[col]);
+  let inpNum, sum, answerLabel;
+
+  if (task === "months") {
+    inpNum = row + 1; // January=1
+    sum = inpNum + numVal;
+    answerLabel = inps[(row + numVal) % 12];
+  } else if (task === "weekdays") {
+    inpNum = row + 1; // Monday=1
+    sum = inpNum + numVal;
+    answerLabel = inps[(row + numVal) % 7];
+  } else if (task === "hours") {
+    inpNum = parseInt(inps[row]); // 0-23
+    sum = inpNum + numVal;
+    answerLabel = String(sum % 24).padStart(2, '0') + ":00";
+  } else { // addition
+    inpNum = parseInt(inps[row]);
+    sum = inpNum + numVal;
+    answerLabel = String(sum);
+  }
+
+  const modKey = getModGroup(state.neuron);
+  const T = modKey ? parseInt(modKey.split("_")[1]) : null;
+  const residue = T !== null ? sum % T : null;
+
+  return { answerLabel, inpNum, numVal, sum, residue, T };
+}
+
+// ── Render one heatmap into a container ──
+function renderOneHeatmap(parentEl, key, label, maxW) {
+  const taskData = state.taskDataCache[state.task];
+  if (!taskData) return;
+
+  const neuronData = taskData.neurons[String(state.neuron)];
+  if (!neuronData) return;
+
+  const grid = neuronData[key];
+  const nRows = grid.length;
+  const nCols = grid[0].length;
+  const inps = taskData.inps;
+  const nums = taskData.nums;
+  const tooltip = document.getElementById("tooltip");
+
+  // Section wrapper
+  const section = document.createElement("div");
+  section.className = "heatmap-section";
+
+  if (label) {
+    const title = document.createElement("div");
+    title.className = "heatmap-section-title";
+    title.textContent = label;
+    section.appendChild(title);
+  }
+
+  // Compute cell sizes
+  const maxCellW = Math.floor((maxW - margin.left - margin.right) / nCols);
+  const maxCellH = Math.floor((maxCanvasH - margin.top - margin.bottom) / nRows);
+  const cellSize = Math.max(3, Math.min(maxCellW, maxCellH, 40));
+  const plotW = cellSize * nCols;
+  const plotH = cellSize * nRows;
+  const totalW = plotW + margin.left + margin.right;
+  const totalH = plotH + margin.top + margin.bottom;
+
+  // Wrapper: heatmap + vertical colorbar side by side
+  const wrapper = document.createElement("div");
+  wrapper.style.cssText = "display:flex;align-items:stretch;gap:0.5rem";
+
+  // Container
+  const container = document.createElement("div");
+  container.style.position = "relative";
+  container.style.width = totalW + "px";
+  container.style.height = totalH + "px";
+  wrapper.appendChild(container);
+
+  // Canvas
+  const canvas = document.createElement("canvas");
+  canvas.width = totalW;
+  canvas.height = totalH;
+  canvas.style.width = totalW + "px";
+  canvas.style.height = totalH + "px";
+  canvas.style.display = "block";
+  canvas.style.cursor = "crosshair";
+  container.appendChild(canvas);
+
+  // SVG for axes (overlay)
+  const svg = d3.select(container).append("svg")
+    .attr("width", totalW)
+    .attr("height", totalH)
+    .style("position", "absolute")
+    .style("top", 0)
+    .style("left", 0)
+    .style("pointer-events", "none");
+
+  // Draw cells
+  const ctx = canvas.getContext("2d");
+  const colorScale = getColorScale(key, grid);
+
+  for (let i = 0; i < nRows; i++) {
+    for (let j = 0; j < nCols; j++) {
+      ctx.fillStyle = colorScale(grid[i][j]);
+      ctx.fillRect(margin.left + j * cellSize, margin.top + i * cellSize, cellSize, cellSize);
+    }
+  }
+
+  // Highlight clicked cell
+  if (state.clickedCell && state.clickedCell.row < nRows && state.clickedCell.col < nCols) {
+    const { row, col } = state.clickedCell;
+    ctx.strokeStyle = "#ff3333";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(
+      margin.left + col * cellSize + 1,
+      margin.top + row * cellSize + 1,
+      cellSize - 2, cellSize - 2
+    );
+  }
+
+  // Axes
+  const g = svg.append("g");
+  const xStep = nCols > 30 ? Math.ceil(nCols / 15) : (nCols > 14 ? 2 : 1);
+  const yStep = nRows > 30 ? Math.ceil(nRows / 15) : (nRows > 14 ? 2 : 1);
+
+  for (let j = 0; j < nCols; j += xStep) {
+    g.append("text")
+      .attr("class", "axis-label-x")
+      .attr("x", margin.left + j * cellSize + cellSize / 2)
+      .attr("y", margin.top + plotH + 12)
+      .attr("text-anchor", "end")
+      .attr("transform", `rotate(-45, ${margin.left + j * cellSize + cellSize / 2}, ${margin.top + plotH + 12})`)
+      .text(nums[j]);
+  }
+
+  for (let i = 0; i < nRows; i += yStep) {
+    g.append("text")
+      .attr("class", "axis-label-y")
+      .attr("x", margin.left - 6)
+      .attr("y", margin.top + i * cellSize + cellSize / 2 + 3)
+      .attr("text-anchor", "end")
+      .text(inps[i]);
+  }
+
+  // Vertical colorbar (right of heatmap)
+  const legendDiv = document.createElement("div");
+  legendDiv.style.cssText = "display:flex;flex-direction:column;align-items:center;justify-content:center;padding-top:" + margin.top + "px;padding-bottom:" + margin.bottom + "px";
+
+  const domain = colorScale.domain();
+  const lo = domain[0], hi = domain[domain.length - 1];
+
+  const maxSpan = document.createElement("span");
+  maxSpan.style.cssText = "font-size:0.7rem;color:#666;margin-bottom:0.2rem";
+  maxSpan.textContent = hi.toFixed(2);
+
+  const legendCanvas = document.createElement("canvas");
+  const legendH = plotH;
+  legendCanvas.width = 14; legendCanvas.height = legendH;
+  legendCanvas.style.cssText = "border:1px solid #ddd;border-radius:2px";
+  const lctx = legendCanvas.getContext("2d");
+  for (let i = 0; i < legendH; i++) {
+    // top = max, bottom = min
+    lctx.fillStyle = colorScale(hi + (lo - hi) * (i / (legendH - 1)));
+    lctx.fillRect(0, i, 14, 1);
+  }
+
+  const minSpan = document.createElement("span");
+  minSpan.style.cssText = "font-size:0.7rem;color:#666;margin-top:0.2rem";
+  minSpan.textContent = lo.toFixed(2);
+
+  legendDiv.appendChild(maxSpan);
+  legendDiv.appendChild(legendCanvas);
+  legendDiv.appendChild(minSpan);
+  wrapper.appendChild(legendDiv);
+
+  section.appendChild(wrapper);
+  parentEl.appendChild(section);
+
+  // Mouse events
+  canvas.addEventListener("mousemove", (event) => {
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left - margin.left;
+    const y = event.clientY - rect.top - margin.top;
+    const c = Math.floor(x / cellSize);
+    const r = Math.floor(y / cellSize);
+
+    if (r >= 0 && r < nRows && c >= 0 && c < nCols) {
+      // Tooltip
+      const ans = getAnswer(r, c);
+      tooltip.innerHTML = `<b>${inps[r]}</b> + <b>${nums[c]}</b><br>sum: ${ans.sum}` +
+        (ans.T !== null ? `, mod ${ans.T}: ${ans.residue}` : '');
+      tooltip.style.left = (event.pageX + 14) + "px";
+      tooltip.style.top = (event.pageY - 32) + "px";
+      tooltip.style.display = "block";
+
+      // Update circle + prompt on hover (if not locked)
+      if (!state.clickedCell) {
+        const prev = state.hoveredCell;
+        if (!prev || prev.row !== r || prev.col !== c) {
+          state.hoveredCell = { row: r, col: c };
+          showPrompt(r, c);
+          renderCircle(r, c);
+        }
+      }
+    } else {
+      tooltip.style.display = "none";
+    }
+  });
+
+  canvas.addEventListener("mouseleave", () => {
+    tooltip.style.display = "none";
+    if (!state.clickedCell) {
+      state.hoveredCell = null;
+      resetPrompt();
+      renderCircleStatic();
+    }
+  });
+
+  canvas.addEventListener("click", (event) => {
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left - margin.left;
+    const y = event.clientY - rect.top - margin.top;
+    const c = Math.floor(x / cellSize);
+    const r = Math.floor(y / cellSize);
+
+    if (r >= 0 && r < nRows && c >= 0 && c < nCols) {
+      state.clickedCell = { row: r, col: c };
+      showPrompt(r, c);
+      renderCircle(r, c);
+      renderAllHeatmaps();
+    }
+  });
+}
+
+// ── Render all heatmaps ──
+function renderAllHeatmaps() {
+  // Combined (primary)
+  const combined = document.getElementById("heatmap-combined");
+  combined.innerHTML = "";
+  renderOneHeatmap(combined, "both", null, maxCanvasW);
+
+  // Gate & Up (secondary, side by side)
+  const gate = document.getElementById("heatmap-gate");
+  const up = document.getElementById("heatmap-up");
+  if (gate && up) {
+    gate.innerHTML = "";
+    up.innerHTML = "";
+    renderOneHeatmap(gate, "gate", "Gate Activations", maxCanvasW * 0.75);
+    renderOneHeatmap(up, "up", "Up Activations", maxCanvasW * 0.75);
+  }
+}
+
+function clearSelection() {
+  if (!state.clickedCell) return;
+  state.clickedCell = null;
+  resetPrompt();
+  renderAllHeatmaps();
+  renderCircleStatic();
+}
+
+function resetPrompt() {
+  document.getElementById("prompt-text").textContent = "";
+  document.getElementById("prompt-meta").innerHTML =
+    '<em style="color:#999">Hover or click a heatmap cell to see specific forward pass activations</em>';
+}
+
+// ── Show prompt ──
+function showPrompt(row, col) {
+  const taskData = state.taskDataCache[state.task];
+  const neuronData = taskData.neurons[String(state.neuron)];
+  const inp = taskData.inps[row];
+  const num = taskData.nums[col];
+  const template = state.neuronsData.templates[state.task];
+  const prompt = template.replace("{input}", inp).replace("{number}", num);
+
+  const answer = getAnswer(row, col);
+  let answerSuffix = ` ${answer.answerLabel} (sum: ${answer.sum}` +
+    (answer.T !== null ? `, mod ${answer.T}: ${answer.residue}` : '') + ')';
+
+  const locked = state.clickedCell && state.clickedCell.row === row && state.clickedCell.col === col;
+  document.getElementById("prompt-text").textContent = prompt + answerSuffix;
+  document.getElementById("prompt-meta").innerHTML =
+    `Neuron <strong>${state.neuron}</strong> &middot; ` +
+    `combined: <strong>${neuronData.both[row][col]}</strong>, ` +
+    `gate: <strong>${neuronData.gate[row][col]}</strong>, ` +
+    `up: <strong>${neuronData.up[row][col]}</strong>` +
+    (answer.residue !== null ? ` &middot; sum % ${answer.T} = <strong>${answer.residue}</strong>` : '') +
+    (locked ? ' &middot; <em style="color:#c44">locked</em>' : '');
+}
+
+// ── Render circle plot ──
+const circleSvgSize = 350;
+const circleMargin = 40;
+const circleRadius = (circleSvgSize - 2 * circleMargin) / 2;
+
+// Distinct colors for neurons
+const neuronColors = d3.schemeTableau10;
+
+function renderCircle(row, col) {
+  const svg = d3.select("#circle-svg");
+  svg.selectAll("*").remove();
+  document.getElementById("circle-hint").style.display = "none";
+
+  const nd = state.neuronsData;
+  const taskData = state.taskDataCache[state.task];
+  const modKey = getModGroup(state.neuron);
+  if (!modKey) return;
+
+  const T = parseInt(modKey.split("_")[1]);
+  const groupNeurons = nd.neurons_by_modulo[modKey];
+  const downproj = nd.downproj[modKey];
+
+  // Gather scaled vectors
+  const vectors = [];
+  let sumC = 0, sumS = 0;
+  let maxMag = 0;
+
+  groupNeurons.forEach((nid, idx) => {
+    const coords = downproj[String(nid)];
+    if (!coords) return;
+    const [c, s] = coords;
+    const neuronActs = taskData.neurons[String(nid)];
+    // Always use "both" activations for the circle regardless of heatmap actType
+    const activation = neuronActs ? neuronActs.both[row][col] : 0;
+    const sc = c * activation;
+    const ss = s * activation;
+    sumC += sc;
+    sumS += ss;
+    const mag = Math.sqrt(sc * sc + ss * ss);
+    if (mag > maxMag) maxMag = mag;
+    vectors.push({ nid, c: sc, s: ss, staticC: c, staticS: s, activation, idx });
+  });
+
+  // Fixed unit circle: refRadius pixels = magnitude 1 in data coords
+  const refRadius = circleRadius * 0.85;
+  const scale = refRadius; // 1 data unit = refRadius pixels
+
+  const cx = circleSvgSize / 2;
+  const cy = circleSvgSize / 2;
+
+  const g = svg.append("g").attr("transform", `translate(${cx},${cy})`);
+
+  // Reference circle = unit circle
+  g.append("circle")
+    .attr("r", refRadius)
+    .attr("fill", "none")
+    .attr("stroke", "#ddd")
+    .attr("stroke-width", 1);
+
+  // Origin crosshair
+  g.append("line").attr("x1", -6).attr("x2", 6).attr("y1", 0).attr("y2", 0)
+    .attr("stroke", "#ccc").attr("stroke-width", 0.5);
+  g.append("line").attr("x1", 0).attr("x2", 0).attr("y1", -6).attr("y2", 6)
+    .attr("stroke", "#ccc").attr("stroke-width", 0.5);
+
+  // Residue class markers on unit circle
+  const labelStep = T > 20 ? 5 : 1;
+  for (let r = 0; r < T; r++) {
+    const angle = (2 * Math.PI * r) / T; // 0 at right (standard)
+    const mx = refRadius * Math.cos(angle);
+    const my = -refRadius * Math.sin(angle);
+    g.append("circle")
+      .attr("cx", mx).attr("cy", my)
+      .attr("r", T > 20 ? 2 : 3.5)
+      .attr("fill", "#bbb")
+      .attr("stroke", "#999")
+      .attr("stroke-width", 0.5);
+    // Label (skip some for large T)
+    if (r % labelStep === 0) {
+      const labelR = refRadius + 14;
+      g.append("text")
+        .attr("x", labelR * Math.cos(angle))
+        .attr("y", -labelR * Math.sin(angle))
+        .attr("text-anchor", "middle")
+        .attr("dominant-baseline", "central")
+        .attr("font-size", "0.65rem")
+        .attr("fill", "#888")
+        .text(r);
+    }
+  }
+
+  // Answer star on unit circle
+  const answer = getAnswer(row, col);
+  if (answer.residue !== null) {
+    const starAngle = (2 * Math.PI * answer.residue) / T;
+    const starX = refRadius * Math.cos(starAngle);
+    const starY = -refRadius * Math.sin(starAngle);
+    const sr = 9; // star outer radius
+    let path = "";
+    for (let i = 0; i < 10; i++) {
+      const a = -Math.PI / 2 + (Math.PI * i / 5);
+      const rd = i % 2 === 0 ? sr : sr * 0.4;
+      const px = starX + rd * Math.cos(a);
+      const py = starY + rd * Math.sin(a);
+      path += (i === 0 ? "M" : "L") + px + "," + py;
+    }
+    path += "Z";
+    g.append("path")
+      .attr("d", path)
+      .attr("fill", "#999")
+      .attr("stroke", "#666")
+      .attr("stroke-width", 0.5);
+  }
+
+  // Arrow marker definition
+  svg.append("defs").append("marker")
+    .attr("id", "arrowhead")
+    .attr("viewBox", "0 0 10 10")
+    .attr("refX", 8).attr("refY", 5)
+    .attr("markerWidth", 5).attr("markerHeight", 5)
+    .attr("orient", "auto-start-reverse")
+    .append("path")
+    .attr("d", "M 0 0 L 10 5 L 0 10 z")
+    .attr("fill", "#666");
+
+  // Draw neuron arrows
+  vectors.forEach(v => {
+    const ex = v.c * scale;
+    const ey = -v.s * scale; // flip y for SVG
+    const isSelected = v.nid === state.neuron;
+    const color = neuronColors[v.idx % neuronColors.length];
+    const opacity = isSelected ? 1.0 : 0.5;
+    const strokeW = isSelected ? 2.5 : 1.5;
+
+    // Only draw if nonzero
+    if (Math.abs(v.c) > 1e-6 || Math.abs(v.s) > 1e-6) {
+      g.append("line")
+        .attr("x1", 0).attr("y1", 0)
+        .attr("x2", ex).attr("y2", ey)
+        .attr("stroke", color)
+        .attr("stroke-width", strokeW)
+        .attr("opacity", opacity)
+        .attr("marker-end", "url(#arrowhead)");
+    }
+
+    // Neuron label near tip
+    const labelOffset = 10;
+    const angle = Math.atan2(ey, ex);
+    const lx = ex + labelOffset * Math.cos(angle);
+    const ly = ey + labelOffset * Math.sin(angle);
+    g.append("text")
+      .attr("x", lx).attr("y", ly)
+      .attr("text-anchor", "middle")
+      .attr("dominant-baseline", "central")
+      .attr("font-size", isSelected ? "0.7rem" : "0.6rem")
+      .attr("font-weight", isSelected ? "bold" : "normal")
+      .attr("fill", color)
+      .attr("opacity", isSelected ? 1 : 0.7)
+      .text(v.nid);
+  });
+
+  // Sum vector (dashed)
+  const sumEx = sumC * scale;
+  const sumEy = -sumS * scale;
+  if (Math.abs(sumC) > 1e-6 || Math.abs(sumS) > 1e-6) {
+    g.append("line")
+      .attr("x1", 0).attr("y1", 0)
+      .attr("x2", sumEx).attr("y2", sumEy)
+      .attr("stroke", "#333")
+      .attr("stroke-width", 2)
+      .attr("stroke-dasharray", "5,3")
+      .attr("opacity", 0.7);
+
+    g.append("text")
+      .attr("x", sumEx).attr("y", sumEy - 12)
+      .attr("text-anchor", "middle")
+      .attr("font-size", "0.7rem")
+      .attr("font-weight", "bold")
+      .attr("fill", "#333")
+      .text("sum");
+  }
+
+  // Mod label
+  svg.append("text")
+    .attr("x", circleSvgSize / 2)
+    .attr("y", circleSvgSize - 5)
+    .attr("text-anchor", "middle")
+    .attr("font-size", "0.75rem")
+    .attr("fill", "#888")
+    .text(`${modKey.replace("_", " ")} \u00b7 ${groupNeurons.length} neurons`);
+}
+
+function renderCircleStatic() {
+  // Show static (unscaled) down_proj coordinates before any click
+  const svg = d3.select("#circle-svg");
+  svg.selectAll("*").remove();
+
+  const nd = state.neuronsData;
+  const modKey = getModGroup(state.neuron);
+  if (!modKey || !nd.downproj[modKey]) {
+    document.getElementById("circle-hint").style.display = "block";
+    return;
+  }
+
+  const T = parseInt(modKey.split("_")[1]);
+  const groupNeurons = nd.neurons_by_modulo[modKey];
+  const downproj = nd.downproj[modKey];
+
+  // Find max magnitude for scaling
+  let maxMag = 0;
+  groupNeurons.forEach(nid => {
+    const coords = downproj[String(nid)];
+    if (!coords) return;
+    const mag = Math.sqrt(coords[0] * coords[0] + coords[1] * coords[1]);
+    if (mag > maxMag) maxMag = mag;
+  });
+
+  // Fixed unit circle: refRadius pixels = magnitude 1 in data coords
+  const refRadius = circleRadius * 0.85;
+  const scale = refRadius;
+
+  const cx = circleSvgSize / 2;
+  const cy = circleSvgSize / 2;
+  const g = svg.append("g").attr("transform", `translate(${cx},${cy})`);
+
+  // Reference circle = unit circle
+  g.append("circle")
+    .attr("r", refRadius)
+    .attr("fill", "none")
+    .attr("stroke", "#ddd")
+    .attr("stroke-width", 1);
+
+  // Origin
+  g.append("line").attr("x1", -6).attr("x2", 6).attr("y1", 0).attr("y2", 0)
+    .attr("stroke", "#ccc").attr("stroke-width", 0.5);
+  g.append("line").attr("x1", 0).attr("x2", 0).attr("y1", -6).attr("y2", 6)
+    .attr("stroke", "#ccc").attr("stroke-width", 0.5);
+
+  // Residue class markers
+  const labelStep = T > 20 ? 5 : 1;
+  for (let r = 0; r < T; r++) {
+    const angle = (2 * Math.PI * r) / T; // 0 at right (standard)
+    const mx = refRadius * Math.cos(angle);
+    const my = -refRadius * Math.sin(angle);
+    g.append("circle").attr("cx", mx).attr("cy", my).attr("r", T > 20 ? 2 : 3.5)
+      .attr("fill", "#bbb").attr("stroke", "#999").attr("stroke-width", 0.5);
+    if (r % labelStep === 0) {
+      const labelR = refRadius + 14;
+      g.append("text")
+        .attr("x", labelR * Math.cos(angle)).attr("y", -labelR * Math.sin(angle))
+        .attr("text-anchor", "middle").attr("dominant-baseline", "central")
+        .attr("font-size", "0.65rem").attr("fill", "#888").text(r);
+    }
+  }
+
+  // Static neuron lines + dots
+  groupNeurons.forEach((nid, idx) => {
+    const coords = downproj[String(nid)];
+    if (!coords) return;
+    const [c, s] = coords;
+    const ex = c * scale;
+    const ey = -s * scale;
+    const isSelected = nid === state.neuron;
+    const color = neuronColors[idx % neuronColors.length];
+
+    // Line from origin to dot
+    g.append("line")
+      .attr("x1", 0).attr("y1", 0)
+      .attr("x2", ex).attr("y2", ey)
+      .attr("stroke", color)
+      .attr("stroke-width", isSelected ? 1.5 : 1)
+      .attr("opacity", isSelected ? 0.8 : 0.35);
+
+    g.append("circle")
+      .attr("cx", ex).attr("cy", ey)
+      .attr("r", isSelected ? 5 : 3.5)
+      .attr("fill", color)
+      .attr("opacity", isSelected ? 1 : 0.6)
+      .attr("stroke", isSelected ? "#333" : "none")
+      .attr("stroke-width", 1);
+
+    g.append("text")
+      .attr("x", ex).attr("y", ey - 10)
+      .attr("text-anchor", "middle")
+      .attr("font-size", isSelected ? "0.7rem" : "0.6rem")
+      .attr("font-weight", isSelected ? "bold" : "normal")
+      .attr("fill", color)
+      .attr("opacity", isSelected ? 1 : 0.7)
+      .text(nid);
+  });
+
+  // Label
+  svg.append("text")
+    .attr("x", circleSvgSize / 2).attr("y", circleSvgSize - 5)
+    .attr("text-anchor", "middle")
+    .attr("font-size", "0.75rem").attr("fill", "#888")
+    .text(`${modKey.replace("_", " ")} \u00b7 static W_down projections`);
+
+  document.getElementById("circle-hint").textContent = "Hover over a heatmap cell to see activation-scaled arrows";
+  document.getElementById("circle-hint").style.display = "block";
+}
+
+// ── Event wiring ──
+document.addEventListener("mousedown", (event) => {
+  const containers = [
+    document.getElementById("heatmap-combined"),
+    document.getElementById("heatmap-gate"),
+    document.getElementById("heatmap-up"),
+  ];
+  if (!containers.some(c => c && c.contains(event.target))) {
+    clearSelection();
+  }
+});
+
+function wireEvents() {
+  document.getElementById("task-select").addEventListener("change", async (e) => {
+    state.task = e.target.value;
+    state.clickedCell = null;
+    state.hoveredCell = null;
+    resetPrompt();
+    document.getElementById("heatmap-combined").innerHTML = '<div class="loading">Loading data&hellip;</div>';
+    await loadTaskData(state.task);
+    renderAllHeatmaps();
+    renderCircleStatic();
+  });
+
+  document.getElementById("neuron-select").addEventListener("change", (e) => {
+    state.neuron = parseInt(e.target.value);
+    state.clickedCell = null;
+    state.hoveredCell = null;
+    resetPrompt();
+    renderAllHeatmaps();
+    renderCircleStatic();
+  });
+
+  // Collapsible toggle for Gate & Up
+  document.getElementById("secondary-toggle").addEventListener("click", () => {
+    const content = document.getElementById("secondary-content");
+    const arrow = document.getElementById("toggle-arrow");
+    const isOpen = content.style.display !== "none";
+    content.style.display = isOpen ? "none" : "block";
+    arrow.classList.toggle("open", !isOpen);
+  });
+}
+
+// ── Init ──
+async function init() {
+  await loadNeuronsData();
+  populateDropdowns();
+  wireEvents();
+  await loadTaskData(state.task);
+  renderAllHeatmaps();
+  renderCircleStatic();
+}
+
+init();
+</script>
+</body>
+</html>
