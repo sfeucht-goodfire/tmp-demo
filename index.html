@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>MLP Neuron Activations &mdash; Llama-3.1-8B Layer 18</title>
+<title>Addition MLP Neuron Explorer &mdash; Llama-3.1-8B</title>
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -125,8 +125,15 @@ select {
 .circle-panel h3 {
   font-size: 1rem;
   font-weight: normal;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.15rem;
   color: #444;
+}
+.circle-subtitle {
+  font-size: 0.9rem;
+  color: #888;
+  /* font-style: italic; */
+  margin-bottom: 0.5rem;
+  min-height: 1em;
 }
 .circle-hint {
   font-size: 0.8rem;
@@ -135,7 +142,7 @@ select {
   text-align: center;
   margin-top: 1rem;
 }
-#circle-svg { display: block; margin: 0 auto; }
+#circle-svg { display: block; margin: 0 auto; width: 100%; height: auto; max-width: 350px; }
 
 /* Tooltip */
 .tooltip {
@@ -182,12 +189,35 @@ select {
   color: #999;
   font-style: italic;
 }
+
+/* Mobile */
+@media (max-width: 768px) {
+  body { padding: 0.75rem 0.75rem 2rem; }
+  h1 { font-size: 1.4rem; }
+  .subtitle { font-size: 0.95rem; margin-bottom: 1rem; }
+  .controls { gap: 0.6rem; padding: 0.6rem 0.75rem; }
+  .control-group { flex: 1; }
+  .control-group select { flex: 1; min-width: 0; }
+  .main-content { grid-template-columns: 1fr; gap: 1rem; }
+  .circle-panel { min-height: auto; padding: 0.75rem; }
+  .heatmap-section { margin-bottom: 1rem; }
+  .secondary-grid {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    gap: 0.5rem;
+  }
+  .secondary-grid .multiply-sign {
+    padding: 0.25rem 0;
+    margin-bottom: 0;
+    align-self: center;
+  }
+}
 </style>
 </head>
 <body>
 
-<h1>MLP Neuron Activation Explorer</h1>
-<p class="subtitle">Llama-3.1-8B &middot; Layer 18 &middot; Modular Arithmetic Neurons</p>
+<h1>Addition MLP Neuron Explorer</h1>
+<p class="subtitle">Llama-3.1-8B &middot; Layer 18</p>
 
 <div class="controls">
   <div class="control-group">
@@ -206,8 +236,9 @@ select {
   </div>
 
   <div class="circle-panel">
-    <h3>Down-Projection &rarr; Fourier Subspace</h3>
-    <svg id="circle-svg" width="350" height="350"></svg>
+    <h3 id="circle-title">Neuron Down Projections &rarr; Fourier Subspace</h3>
+    <div class="circle-subtitle" id="circle-subtitle"></div>
+    <svg id="circle-svg" viewBox="0 0 350 350" preserveAspectRatio="xMidYMid meet"></svg>
     <p class="circle-hint" id="circle-hint">Click a heatmap cell to see activation-scaled projections</p>
   </div>
 </div>
@@ -243,9 +274,15 @@ const state = {
   hoveredCell: null,  // {row, col} — follows mouse
 };
 
+// ── Touch detection ──
+const isTouch = window.matchMedia("(hover: none)").matches;
+
 // ── Heatmap sizing ──
-const margin = { top: 10, right: 10, bottom: 60, left: 80 };
-const maxCanvasW = 640;
+function computeMargin(maxW) {
+  return maxW < 500
+    ? { top: 8, right: 8, bottom: 50, left: 40 }
+    : { top: 10, right: 10, bottom: 60, left: 80 };
+}
 const maxCanvasH = 500;
 
 // ── Color interpolators ──
@@ -393,6 +430,7 @@ function renderOneHeatmap(parentEl, key, label, maxW) {
   const inps = taskData.inps;
   const nums = taskData.nums;
   const tooltip = document.getElementById("tooltip");
+  const margin = computeMargin(maxW);
 
   // Section wrapper
   const section = document.createElement("div");
@@ -402,6 +440,8 @@ function renderOneHeatmap(parentEl, key, label, maxW) {
     const title = document.createElement("div");
     title.className = "heatmap-section-title";
     title.textContent = label;
+    title.style.paddingLeft = margin.left + "px";
+    title.style.paddingRight = margin.right + "px";
     section.appendChild(title);
   }
 
@@ -525,45 +565,47 @@ function renderOneHeatmap(parentEl, key, label, maxW) {
   section.appendChild(wrapper);
   parentEl.appendChild(section);
 
-  // Mouse events
-  canvas.addEventListener("mousemove", (event) => {
-    const rect = canvas.getBoundingClientRect();
-    const x = event.clientX - rect.left - margin.left;
-    const y = event.clientY - rect.top - margin.top;
-    const c = Math.floor(x / cellSize);
-    const r = Math.floor(y / cellSize);
+  // Mouse events (hover-based; skipped on touch devices)
+  if (!isTouch) {
+    canvas.addEventListener("mousemove", (event) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = event.clientX - rect.left - margin.left;
+      const y = event.clientY - rect.top - margin.top;
+      const c = Math.floor(x / cellSize);
+      const r = Math.floor(y / cellSize);
 
-    if (r >= 0 && r < nRows && c >= 0 && c < nCols) {
-      // Tooltip
-      const ans = getAnswer(r, c);
-      tooltip.innerHTML = `<b>${inps[r]}</b> + <b>${nums[c]}</b><br>sum: ${ans.sum}` +
-        (ans.T !== null ? `, mod ${ans.T}: ${ans.residue}` : '');
-      tooltip.style.left = (event.pageX + 14) + "px";
-      tooltip.style.top = (event.pageY - 32) + "px";
-      tooltip.style.display = "block";
+      if (r >= 0 && r < nRows && c >= 0 && c < nCols) {
+        // Tooltip
+        const ans = getAnswer(r, c);
+        tooltip.innerHTML = `<b>${inps[r]}</b> + <b>${nums[c]}</b><br>sum: ${ans.sum}` +
+          (ans.T !== null ? `, mod ${ans.T}: ${ans.residue}` : '');
+        tooltip.style.left = (event.pageX + 14) + "px";
+        tooltip.style.top = (event.pageY - 32) + "px";
+        tooltip.style.display = "block";
 
-      // Update circle + prompt on hover (if not locked)
-      if (!state.clickedCell) {
-        const prev = state.hoveredCell;
-        if (!prev || prev.row !== r || prev.col !== c) {
-          state.hoveredCell = { row: r, col: c };
-          showPrompt(r, c);
-          renderCircle(r, c);
+        // Update circle + prompt on hover (if not locked)
+        if (!state.clickedCell) {
+          const prev = state.hoveredCell;
+          if (!prev || prev.row !== r || prev.col !== c) {
+            state.hoveredCell = { row: r, col: c };
+            showPrompt(r, c);
+            renderCircle(r, c);
+          }
         }
+      } else {
+        tooltip.style.display = "none";
       }
-    } else {
-      tooltip.style.display = "none";
-    }
-  });
+    });
 
-  canvas.addEventListener("mouseleave", () => {
-    tooltip.style.display = "none";
-    if (!state.clickedCell) {
-      state.hoveredCell = null;
-      resetPrompt();
-      renderCircleStatic();
-    }
-  });
+    canvas.addEventListener("mouseleave", () => {
+      tooltip.style.display = "none";
+      if (!state.clickedCell) {
+        state.hoveredCell = null;
+        resetPrompt();
+        renderCircleStatic();
+      }
+    });
+  }
 
   canvas.addEventListener("click", (event) => {
     const rect = canvas.getBoundingClientRect();
@@ -582,20 +624,28 @@ function renderOneHeatmap(parentEl, key, label, maxW) {
 }
 
 // ── Render all heatmaps ──
+function availableWidth(el) {
+  const w = el && el.clientWidth;
+  return w && w > 0 ? w : Math.max(260, window.innerWidth - 32);
+}
+
 function renderAllHeatmaps() {
   // Combined (primary)
   const combined = document.getElementById("heatmap-combined");
   combined.innerHTML = "";
-  renderOneHeatmap(combined, "both", null, maxCanvasW);
+  const primaryW = Math.min(640, availableWidth(combined));
+  renderOneHeatmap(combined, "both", null, primaryW);
 
-  // Gate & Up (secondary, side by side)
+  // Gate & Up (secondary, side by side on desktop, stacked on mobile)
   const gate = document.getElementById("heatmap-gate");
   const up = document.getElementById("heatmap-up");
   if (gate && up) {
     gate.innerHTML = "";
     up.innerHTML = "";
-    renderOneHeatmap(gate, "gate", "Gate Activations", maxCanvasW * 0.75);
-    renderOneHeatmap(up, "up", "Up Activations", maxCanvasW * 0.75);
+    const gateW = Math.min(480, availableWidth(gate) || primaryW * 0.75);
+    const upW = Math.min(480, availableWidth(up) || primaryW * 0.75);
+    renderOneHeatmap(gate, "gate", "Gate Activations", gateW);
+    renderOneHeatmap(up, "up", "Up Activations", upW);
   }
 }
 
@@ -609,8 +659,9 @@ function clearSelection() {
 
 function resetPrompt() {
   document.getElementById("prompt-text").textContent = "";
+  const verb = isTouch ? "Tap" : "Hover or click";
   document.getElementById("prompt-meta").innerHTML =
-    '<em style="color:#999">Hover or click a heatmap cell to see specific forward pass activations</em>';
+    `<em style="color:#999">${verb} a heatmap cell to see specific forward pass activations</em>`;
 }
 
 // ── Show prompt ──
@@ -623,17 +674,18 @@ function showPrompt(row, col) {
   const prompt = template.replace("{input}", inp).replace("{number}", num);
 
   const answer = getAnswer(row, col);
-  let answerSuffix = ` ${answer.answerLabel} (sum: ${answer.sum}` +
-    (answer.T !== null ? `, mod ${answer.T}: ${answer.residue}` : '') + ')';
+  let answerSuffix = ` ${answer.answerLabel}` // (sum: ${answer.sum}` +
+    // (answer.T !== null ? `, mod ${answer.T}: ${answer.residue}` : '') + ')';
 
   const locked = state.clickedCell && state.clickedCell.row === row && state.clickedCell.col === col;
   document.getElementById("prompt-text").textContent = prompt + answerSuffix;
   document.getElementById("prompt-meta").innerHTML =
-    `Neuron <strong>${state.neuron}</strong> &middot; ` +
-    `combined: <strong>${neuronData.both[row][col]}</strong>, ` +
-    `gate: <strong>${neuronData.gate[row][col]}</strong>, ` +
-    `up: <strong>${neuronData.up[row][col]}</strong>` +
-    (answer.residue !== null ? ` &middot; sum % ${answer.T} = <strong>${answer.residue}</strong>` : '') +
+    // `Neuron <strong>${state.neuron}</strong> &middot; ` +
+    // `combined: <strong>${neuronData.both[row][col]}</strong>, ` +
+    // `gate: <strong>${neuronData.gate[row][col]}</strong>, ` +
+    // `up: <strong>${neuronData.up[row][col]}</strong>` +
+    `${inp} + ${num} = <strong>${answer.sum}</strong>,` +
+    (answer.residue !== null ? ` mod ${answer.T} = <strong>${answer.residue}</strong>` : '') +
     (locked ? ' &middot; <em style="color:#c44">locked</em>' : '');
 }
 
@@ -644,6 +696,41 @@ const circleRadius = (circleSvgSize - 2 * circleMargin) / 2;
 
 // Distinct colors for neurons
 const neuronColors = d3.schemeTableau10;
+
+function setCircleTitle(modKey) {
+  const base = "Fourier Probe Subspace";
+  const el = document.getElementById("circle-title");
+  if (modKey) {
+    const T = modKey.replace("mod_", "");
+    el.textContent = `${base} for T=${T}`;
+  } else {
+    el.textContent = base;
+  }
+}
+
+function drawProbeAxes(g, refRadius) {
+  const axisExt = refRadius + 30;
+  g.append("line")
+    .attr("x1", -axisExt).attr("y1", 0).attr("x2", axisExt).attr("y2", 0)
+    .attr("stroke", "#e8e8e8").attr("stroke-width", 1);
+  g.append("line")
+    .attr("x1", 0).attr("y1", -axisExt).attr("x2", 0).attr("y2", axisExt)
+    .attr("stroke", "#e8e8e8").attr("stroke-width", 1);
+  g.append("text")
+    .attr("x", axisExt).attr("y", 14)
+    .attr("text-anchor", "end")
+    .attr("font-size", "0.65rem")
+    .attr("font-style", "italic")
+    .attr("fill", "#aaa")
+    .text("Cosine Probe");
+  g.append("text")
+    .attr("x", 6).attr("y", -axisExt + 4)
+    .attr("text-anchor", "start")
+    .attr("font-size", "0.65rem")
+    .attr("font-style", "italic")
+    .attr("fill", "#aaa")
+    .text("Sine Probe");
+}
 
 function renderCircle(row, col) {
   const svg = d3.select("#circle-svg");
@@ -696,11 +783,7 @@ function renderCircle(row, col) {
     .attr("stroke", "#ddd")
     .attr("stroke-width", 1);
 
-  // Origin crosshair
-  g.append("line").attr("x1", -6).attr("x2", 6).attr("y1", 0).attr("y2", 0)
-    .attr("stroke", "#ccc").attr("stroke-width", 0.5);
-  g.append("line").attr("x1", 0).attr("x2", 0).attr("y1", -6).attr("y2", 6)
-    .attr("stroke", "#ccc").attr("stroke-width", 0.5);
+  drawProbeAxes(g, refRadius);
 
   // Residue class markers on unit circle
   const labelStep = T > 20 ? 5 : 1;
@@ -751,18 +834,22 @@ function renderCircle(row, col) {
       .attr("stroke-width", 0.5);
   }
 
-  // Arrow marker definition
-  svg.append("defs").append("marker")
-    .attr("id", "arrowhead")
-    .attr("viewBox", "0 0 10 10")
-    .attr("refX", 8).attr("refY", 5)
-    .attr("markerWidth", 5).attr("markerHeight", 5)
-    .attr("orient", "auto-start-reverse")
-    .append("path")
-    .attr("d", "M 0 0 L 10 5 L 0 10 z")
-    .attr("fill", "#666");
+  // Arrow marker definitions (one per neuron color)
+  const defs = svg.append("defs");
+  neuronColors.forEach((color, i) => {
+    defs.append("marker")
+      .attr("id", `arrowhead-${i}`)
+      .attr("viewBox", "0 0 10 10")
+      .attr("refX", 8).attr("refY", 5)
+      .attr("markerWidth", 5).attr("markerHeight", 5)
+      .attr("orient", "auto-start-reverse")
+      .append("path")
+      .attr("d", "M 0 0 L 10 5 L 0 10 z")
+      .attr("fill", color);
+  });
 
   // Draw neuron arrows
+  const locked = !!state.clickedCell;
   vectors.forEach(v => {
     const ex = v.c * scale;
     const ey = -v.s * scale; // flip y for SVG
@@ -771,31 +858,46 @@ function renderCircle(row, col) {
     const opacity = isSelected ? 1.0 : 0.5;
     const strokeW = isSelected ? 2.5 : 1.5;
 
-    // Only draw if nonzero
-    if (Math.abs(v.c) > 1e-6 || Math.abs(v.s) > 1e-6) {
-      g.append("line")
+    if (Math.abs(v.c) < 1e-6 && Math.abs(v.s) < 1e-6) return;
+
+    g.append("line")
+      .attr("x1", 0).attr("y1", 0)
+      .attr("x2", ex).attr("y2", ey)
+      .attr("stroke", color)
+      .attr("stroke-width", strokeW)
+      .attr("opacity", opacity)
+      .attr("marker-end", `url(#arrowhead-${v.idx % neuronColors.length})`);
+
+    // In locked mode: transparent hit line reveals the neuron id on arrow hover
+    if (locked) {
+      const labelOffset = 10;
+      const ang = Math.atan2(ey, ex);
+      const lx = ex + labelOffset * Math.cos(ang);
+      const ly = ey + labelOffset * Math.sin(ang);
+
+      const hit = g.append("line")
         .attr("x1", 0).attr("y1", 0)
         .attr("x2", ex).attr("y2", ey)
-        .attr("stroke", color)
-        .attr("stroke-width", strokeW)
-        .attr("opacity", opacity)
-        .attr("marker-end", "url(#arrowhead)");
-    }
+        .attr("stroke", "transparent")
+        .attr("stroke-width", 12)
+        .style("cursor", "pointer");
 
-    // Neuron label near tip
-    const labelOffset = 10;
-    const angle = Math.atan2(ey, ex);
-    const lx = ex + labelOffset * Math.cos(angle);
-    const ly = ey + labelOffset * Math.sin(angle);
-    g.append("text")
-      .attr("x", lx).attr("y", ly)
-      .attr("text-anchor", "middle")
-      .attr("dominant-baseline", "central")
-      .attr("font-size", isSelected ? "0.7rem" : "0.6rem")
-      .attr("font-weight", isSelected ? "bold" : "normal")
-      .attr("fill", color)
-      .attr("opacity", isSelected ? 1 : 0.7)
-      .text(v.nid);
+      let label = null;
+      hit.on("mouseenter", () => {
+        label = g.append("text")
+          .attr("x", lx).attr("y", ly)
+          .attr("text-anchor", "middle")
+          .attr("dominant-baseline", "central")
+          .attr("font-size", isSelected ? "0.7rem" : "0.6rem")
+          .attr("font-weight", isSelected ? "bold" : "normal")
+          .attr("fill", color)
+          .attr("pointer-events", "none")
+          .text(v.nid);
+      });
+      hit.on("mouseleave", () => {
+        if (label) { label.remove(); label = null; }
+      });
+    }
   });
 
   // Sum vector (dashed)
@@ -820,13 +922,10 @@ function renderCircle(row, col) {
   }
 
   // Mod label
-  svg.append("text")
-    .attr("x", circleSvgSize / 2)
-    .attr("y", circleSvgSize - 5)
-    .attr("text-anchor", "middle")
-    .attr("font-size", "0.75rem")
-    .attr("fill", "#888")
-    .text(`${modKey.replace("_", " ")} \u00b7 ${groupNeurons.length} neurons`);
+  setCircleTitle(modKey);
+  document.getElementById("circle-subtitle").textContent =
+    // `${modKey.replace("_", " ")} \u00b7 ${groupNeurons.length} neurons`;
+    `Period ${modKey.replace("mod_", " ")} Neurons \u00b7 Actual Forward Pass`;
 }
 
 function renderCircleStatic() {
@@ -837,6 +936,8 @@ function renderCircleStatic() {
   const nd = state.neuronsData;
   const modKey = getModGroup(state.neuron);
   if (!modKey || !nd.downproj[modKey]) {
+    setCircleTitle(null);
+    document.getElementById("circle-subtitle").textContent = "";
     document.getElementById("circle-hint").style.display = "block";
     return;
   }
@@ -869,11 +970,7 @@ function renderCircleStatic() {
     .attr("stroke", "#ddd")
     .attr("stroke-width", 1);
 
-  // Origin
-  g.append("line").attr("x1", -6).attr("x2", 6).attr("y1", 0).attr("y2", 0)
-    .attr("stroke", "#ccc").attr("stroke-width", 0.5);
-  g.append("line").attr("x1", 0).attr("x2", 0).attr("y1", -6).attr("y2", 6)
-    .attr("stroke", "#ccc").attr("stroke-width", 0.5);
+  drawProbeAxes(g, refRadius);
 
   // Residue class markers
   const labelStep = T > 20 ? 5 : 1;
@@ -928,25 +1025,28 @@ function renderCircleStatic() {
       .text(nid);
   });
 
-  // Label
-  svg.append("text")
-    .attr("x", circleSvgSize / 2).attr("y", circleSvgSize - 5)
-    .attr("text-anchor", "middle")
-    .attr("font-size", "0.75rem").attr("fill", "#888")
-    .text(`${modKey.replace("_", " ")} \u00b7 static W_down projections`);
+  setCircleTitle(modKey);
+  document.getElementById("circle-subtitle").textContent =
+    // `W_down weights for all period ${modKey.replace("mod_", " ")} neurons`;
+    `Period ${modKey.replace("mod_", " ")} Neurons \u00b7 Raw W_down Weights`;
 
-  document.getElementById("circle-hint").textContent = "Hover over a heatmap cell to see activation-scaled arrows";
+  document.getElementById("circle-hint").textContent = isTouch
+    ? "Tap a heatmap cell to see activation-scaled arrows"
+    : "Hover over a heatmap cell to see activation-scaled arrows";
   document.getElementById("circle-hint").style.display = "block";
 }
 
 // ── Event wiring ──
-document.addEventListener("mousedown", (event) => {
-  const containers = [
-    document.getElementById("heatmap-combined"),
-    document.getElementById("heatmap-gate"),
-    document.getElementById("heatmap-up"),
+document.addEventListener("pointerdown", (event) => {
+  const safeIds = [
+    "heatmap-combined", "heatmap-gate", "heatmap-up",
+    "circle-svg", "prompt-display",
   ];
-  if (!containers.some(c => c && c.contains(event.target))) {
+  const inSafe = safeIds.some(id => {
+    const el = document.getElementById(id);
+    return el && el.contains(event.target);
+  }) || event.target.closest(".circle-panel");
+  if (!inSafe) {
     clearSelection();
   }
 });
@@ -987,10 +1087,20 @@ async function init() {
   await loadNeuronsData();
   populateDropdowns();
   wireEvents();
+  resetPrompt();
   await loadTaskData(state.task);
   renderAllHeatmaps();
   renderCircleStatic();
 }
+
+// ── Resize / orientation ──
+let resizeTimer = null;
+window.addEventListener("resize", () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    if (state.taskDataCache[state.task]) renderAllHeatmaps();
+  }, 150);
+});
 
 init();
 </script>
