@@ -3,31 +3,31 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Addition MLP Neuron Explorer &mdash; Llama-3.1-8B</title>
+<title>All-Moduli Neuron View &mdash; Llama-3.1-8B</title>
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
   font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif;
-  max-width: 1280px;
+  max-width: 700px;
   margin: 0 auto;
-  padding: 2rem 2rem 4rem;
+  padding: 2rem 1.5rem 4rem;
   color: #333;
   background: #fafaf8;
   line-height: 1.6;
 }
 
-h1 { font-size: 1.8rem; font-weight: normal; margin-bottom: 0.25rem; }
-.subtitle { color: #666; font-size: 1.05rem; margin-bottom: 1.5rem; }
+h1 { font-size: 1.6rem; font-weight: normal; margin-bottom: 0.25rem; }
+.subtitle { color: #666; font-size: 1rem; margin-bottom: 1.25rem; }
 
 /* Controls */
 .controls {
   display: flex;
-  gap: 1.2rem;
+  gap: 1rem;
   align-items: center;
   flex-wrap: wrap;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   padding: 0.8rem 1rem;
   background: #f0efeb;
   border-radius: 6px;
@@ -44,105 +44,83 @@ select {
   cursor: pointer;
 }
 
-/* Main layout */
-.main-content {
-  display: grid;
-  grid-template-columns: 1fr 380px;
-  gap: 1.5rem;
-  align-items: start;
+/* Prompt display */
+.prompt-display {
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  background: #f5f5f0;
+  border-left: 3px solid #8b7355;
+  border-radius: 0 4px 4px 0;
 }
-
-/* Heatmap panel */
-.heatmap-panel { position: relative; }
-.axis-label-x, .axis-label-y {
-  font-size: 0.7rem;
-  fill: #555;
-}
-.axis-title {
-  font-size: 0.8rem;
-  fill: #444;
-  font-style: italic;
-}
-
-
-/* Heatmap sections */
-.heatmap-section { margin-bottom: 1.5rem; }
-.heatmap-section-title {
-  font-size: 0.9rem;
-  color: #555;
-  font-style: italic;
+.prompt-display .prompt-text {
+  font-family: 'Menlo', 'Consolas', monospace;
+  font-size: 0.88rem;
+  white-space: pre-wrap;
   margin-bottom: 0.3rem;
-  /* offset to center over the plot area, not the full canvas */
-  padding-left: 80px;
-  padding-right: 10px;
-  text-align: center;
+  color: #333;
 }
-
-/* Secondary heatmaps (Gate & Up) */
-.secondary-heatmaps { margin-top: 1.5rem; }
-.collapsible-header {
-  cursor: pointer;
-  user-select: none;
-  font-size: 0.95rem;
-  color: #555;
-  padding: 0.5rem 0;
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-.collapsible-header:hover { color: #333; }
-.toggle-arrow {
-  display: inline-block;
-  font-size: 0.7rem;
-  transition: transform 0.15s;
-}
-.toggle-arrow.open { transform: rotate(90deg); }
-.secondary-grid {
-  display: grid;
-  grid-template-columns: auto auto auto;
-  gap: 0;
-  margin-top: 0.5rem;
-  align-items: start;
-  justify-content: center;
-}
-.secondary-grid .multiply-sign {
-  font-size: 1.8rem;
-  color: #999;
-  padding: 0 1rem;
-  /* center, then shift up to account for title/legend/axis weight at bottom */
-  align-self: center;
-  margin-bottom: 4rem;
-}
-
-/* Circle panel */
-.circle-panel {
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 1rem;
-  background: #fcfcfa;
-  min-height: 420px;
-}
-.circle-panel h3 {
-  font-size: 1rem;
-  font-weight: normal;
-  margin-bottom: 0.15rem;
-  color: #444;
-}
-.circle-subtitle {
-  font-size: 0.9rem;
-  color: #888;
-  /* font-style: italic; */
-  margin-bottom: 0.5rem;
-  min-height: 1em;
-}
-.circle-hint {
+.prompt-display .prompt-meta {
   font-size: 0.8rem;
-  color: #999;
-  font-style: italic;
-  text-align: center;
-  margin-top: 1rem;
+  color: #777;
 }
-#circle-svg { display: block; margin: 0 auto; width: 100%; height: auto; max-width: 350px; }
+.prompt-display .prompt-meta strong { color: #555; }
+
+/* Circles section title */
+.circles-title {
+  font-size: 1.05rem;
+  font-weight: normal;
+  color: #444;
+  text-align: center;
+  margin-top: 1.75rem;
+  margin-bottom: 0.35rem;
+  border-bottom: 1px solid #e4e1d8;
+  padding-bottom: 0.4rem;
+}
+.circles-legend {
+  font-size: 0.8rem;
+  font-style: italic;
+  color: #999;
+  text-align: center;
+  margin-bottom: 0.75rem;
+}
+
+/* Circles grid — 3×2 layout so each circle has breathing room */
+.circles-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem 0.6rem;
+  margin: 1.25rem 0 0.5rem;
+}
+.circle-cell {
+  text-align: center;
+  min-width: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 0.25rem 0.15rem;
+}
+.circle-cell-selected {
+  border-color: #cfcfcf;
+  background: #fbfaf6;
+}
+.circle-cell h4 {
+  font-size: 0.75rem;
+  font-weight: normal;
+  color: #666;
+  margin-bottom: 0.05rem;
+  font-family: 'Menlo', 'Consolas', monospace;
+}
+.circle-cell .circle-residue {
+  font-size: 0.7rem;
+  color: #999;
+  margin-bottom: 0.15rem;
+  font-family: 'Menlo', 'Consolas', monospace;
+}
+.circle-cell .circle-residue strong { color: #444; }
+.circle-cell svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
 
 /* Tooltip */
 .tooltip {
@@ -159,65 +137,75 @@ select {
   display: none;
 }
 
-/* Prompt display */
-.prompt-display {
+/* Heatmap section (shown after neuron selection) */
+.heatmap-section-wrapper {
+  display: none;
   margin-top: 1.5rem;
-  padding: 1rem 1.2rem;
-  background: #f5f5f0;
-  border-left: 3px solid #8b7355;
-  border-radius: 0 4px 4px 0;
+  padding-top: 1.25rem;
+  border-top: 1px solid #e4e1d8;
 }
-.prompt-display .prompt-text {
-  font-family: 'Menlo', 'Consolas', monospace;
-  font-size: 0.88rem;
-  white-space: pre-wrap;
-  margin-bottom: 0.4rem;
-  color: #333;
+.heatmap-section-wrapper.visible { display: block; }
+.selected-neuron-header {
+  font-size: 0.95rem;
+  color: #444;
+  margin-bottom: 0.75rem;
 }
-.prompt-display .prompt-meta {
-  font-size: 0.82rem;
-  color: #777;
+.selected-neuron-header strong { color: #222; }
+.selected-neuron-header .deselect {
+  font-size: 0.8rem;
+  color: #888;
+  font-style: italic;
+  margin-left: 0.5rem;
 }
-.prompt-display .prompt-meta strong { color: #555; }
 
-/* Loading */
+/* Reused heatmap styles from demo_draft1 */
+.axis-label-x, .axis-label-y { font-size: 0.7rem; fill: #555; }
+.axis-title { font-size: 0.8rem; fill: #444; font-style: italic; }
+.heatmap-section { margin-bottom: 1.25rem; }
+#heatmap-combined { display: flex; justify-content: center; }
+.heatmap-section-title {
+  font-size: 0.9rem;
+  color: #555;
+  font-style: italic;
+  margin-bottom: 0.3rem;
+  text-align: center;
+}
+
+/* Gate above Up */
+.secondary-heatmaps { margin-top: 1.25rem; }
+.secondary-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 0.5rem;
+  align-items: center;
+}
+
 .loading {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 300px;
+  height: 180px;
   color: #999;
   font-style: italic;
 }
 
-/* Mobile */
-@media (max-width: 768px) {
+/* Responsive */
+@media (max-width: 620px) {
   body { padding: 0.75rem 0.75rem 2rem; }
-  h1 { font-size: 1.4rem; }
-  .subtitle { font-size: 0.95rem; margin-bottom: 1rem; }
+  h1 { font-size: 1.3rem; }
+  .circles-grid { grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
   .controls { gap: 0.6rem; padding: 0.6rem 0.75rem; }
   .control-group { flex: 1; }
   .control-group select { flex: 1; min-width: 0; }
-  .main-content { grid-template-columns: 1fr; gap: 1rem; }
-  .circle-panel { min-height: auto; padding: 0.75rem; }
-  .heatmap-section { margin-bottom: 1rem; }
-  .secondary-grid {
-    grid-template-columns: 1fr;
-    justify-items: center;
-    gap: 0.5rem;
-  }
-  .secondary-grid .multiply-sign {
-    padding: 0.25rem 0;
-    margin-bottom: 0;
-    align-self: center;
-  }
+  .secondary-grid { gap: 0.75rem; }
 }
 </style>
 </head>
 <body>
 
-<h1>Addition MLP Neuron Explorer</h1>
-<p class="subtitle">Llama-3.1-8B &middot; Layer 18</p>
+<h1>Addition Neurons in a Real Forward Pass</h1>
+<p class="subtitle">Llama-3.1-8B &middot; Layer 18 &middot; MLP Neuron Activations</p>
 
 <div class="controls">
   <div class="control-group">
@@ -225,37 +213,32 @@ select {
     <select id="task-select"></select>
   </div>
   <div class="control-group">
-    <label for="neuron-select">Neuron</label>
-    <select id="neuron-select"></select>
+    <label for="inp-select">Input</label>
+    <select id="inp-select"></select>
   </div>
-</div>
-
-<div class="main-content">
-  <div class="heatmap-panel" id="heatmap-combined">
-    <div class="loading" id="loading-msg">Loading data&hellip;</div>
-  </div>
-
-  <div class="circle-panel">
-    <h3 id="circle-title">Neuron Down Projections &rarr; Fourier Subspace</h3>
-    <div class="circle-subtitle" id="circle-subtitle"></div>
-    <svg id="circle-svg" viewBox="0 0 350 350" preserveAspectRatio="xMidYMid meet"></svg>
-    <p class="circle-hint" id="circle-hint">Click a heatmap cell to see activation-scaled projections</p>
+  <div class="control-group">
+    <label for="num-select">Number</label>
+    <select id="num-select"></select>
   </div>
 </div>
 
 <div class="prompt-display" id="prompt-display">
   <div class="prompt-text" id="prompt-text"></div>
-  <div class="prompt-meta" id="prompt-meta"><em style="color:#999">Hover or click a heatmap cell to see specific forward pass activations</em></div>
+  <div class="prompt-meta" id="prompt-meta"></div>
 </div>
 
-<div class="secondary-heatmaps">
-  <div class="collapsible-header" id="secondary-toggle">
-    <span class="toggle-arrow" id="toggle-arrow">&#9654;</span> Gate &amp; Up Activations
-  </div>
-  <div class="collapsible-content" id="secondary-content" style="display:none">
+<h2 class="circles-title">Neuron Outputs in Each Fourier Subspace for This Prompt</h2>
+<div class="circles-legend">Stars: Ground Truth Answer &middot; Dashed Lines: Sum of Neuron Outputs</div>
+<div class="circles-grid" id="circles-grid">
+  <div class="loading" style="grid-column: 1 / -1">Loading data&hellip;</div>
+</div>
+
+<div class="heatmap-section-wrapper" id="heatmap-wrapper">
+  <div class="selected-neuron-header" id="selected-neuron-header"></div>
+  <div id="heatmap-combined"></div>
+  <div class="secondary-heatmaps">
     <div class="secondary-grid">
       <div id="heatmap-gate"></div>
-      <div class="multiply-sign">&times;</div>
       <div id="heatmap-up"></div>
     </div>
   </div>
@@ -267,40 +250,35 @@ select {
 // ── State ──
 const state = {
   task: "months",
-  neuron: 8859,
+  row: 0,             // committed (click-locked) cell
+  col: 0,
+  hoveredCell: null,  // {r, c} | null — transient preview from heatmap hover
+  selectedNeuron: null,
+  selectedMod: null,
   taskDataCache: {},
   neuronsData: null,
-  clickedCell: null,  // {row, col} — locked by click
-  hoveredCell: null,  // {row, col} — follows mouse
 };
 
-// ── Touch detection ──
+// The cell currently shown in the circles + prompt + green square.
+// Hover takes precedence; falls back to the click-locked cell.
+function effectiveCell() {
+  return state.hoveredCell || { r: state.row, c: state.col };
+}
+
+const MOD_ORDER = ["mod_2", "mod_5", "mod_10", "mod_20", "mod_50", "mod_100"];
 const isTouch = window.matchMedia("(hover: none)").matches;
 
-// ── Heatmap sizing ──
-function computeMargin(maxW) {
-  return maxW < 500
-    ? { top: 8, right: 8, bottom: 50, left: 40 }
-    : { top: 10, right: 10, bottom: 60, left: 80 };
-}
-const maxCanvasH = 500;
-
-// ── Color interpolators ──
-function getColorScale(actType, data2d) {
-  const flat = data2d.flat();
-  const maxAbs = d3.max(flat, d => Math.abs(d));
-  const maxVal = d3.max(flat);
-  const minVal = d3.min(flat);
-
-  if (actType === "gate") {
-    return d3.scaleSequential(d3.interpolateBlues).domain([-0.3, Math.max(maxAbs, 0.1)]);
-  } else if (actType === "up") {
-    const bound = Math.max(maxAbs, 0.1);
-    return d3.scaleDiverging(d3.interpolatePRGn).domain([-bound, 0, bound]);
-  } else {
-    const bound = Math.max(maxAbs, 0.1);
-    return d3.scaleDiverging(d3.interpolatePiYG).domain([-bound, 0, bound]);
-  }
+// Per-task default prompt + preselected neuron shown on first load / task-switch.
+const TASK_DEFAULTS = {
+  months: { row: 3, col: 3, selectedNeuron: 12728, selectedMod: "mod_5" }, // April + four
+  addition: { row: 14, col: 20, selectedNeuron: 1448, selectedMod: "mod_50" }, // 15 + 21
+};
+function applyTaskDefaults(task) {
+  const d = TASK_DEFAULTS[task] || { row: 0, col: 0, selectedNeuron: null, selectedMod: null };
+  state.row = d.row;
+  state.col = d.col;
+  state.selectedNeuron = d.selectedNeuron;
+  state.selectedMod = d.selectedMod;
 }
 
 // ── Data loading ──
@@ -315,55 +293,6 @@ async function loadTaskData(task) {
   const data = await resp.json();
   state.taskDataCache[task] = data;
   return data;
-}
-
-// ── Populate dropdowns ──
-function populateDropdowns() {
-  const nd = state.neuronsData;
-
-  // Task dropdown
-  const taskSel = document.getElementById("task-select");
-  nd.tasks.forEach(t => {
-    const opt = document.createElement("option");
-    opt.value = t;
-    opt.textContent = t.charAt(0).toUpperCase() + t.slice(1);
-    if (t === state.task) opt.selected = true;
-    taskSel.appendChild(opt);
-  });
-
-  // Neuron dropdown grouped by modulo
-  populateNeuronDropdown();
-}
-
-function populateNeuronDropdown() {
-  const nd = state.neuronsData;
-  const neuronSel = document.getElementById("neuron-select");
-  neuronSel.innerHTML = "";
-
-  const modOrder = ["mod_2", "mod_5", "mod_10", "mod_20", "mod_50", "mod_100"];
-  modOrder.forEach(modKey => {
-    const neurons = nd.neurons_by_modulo[modKey];
-    if (!neurons || neurons.length === 0) return;
-    const group = document.createElement("optgroup");
-    group.label = modKey.replace("_", " ");
-    neurons.forEach(nid => {
-      const opt = document.createElement("option");
-      opt.value = nid;
-      opt.textContent = `Neuron ${nid}`;
-      if (nid === state.neuron) opt.selected = true;
-      group.appendChild(opt);
-    });
-    neuronSel.appendChild(group);
-  });
-}
-
-// ── Get modulo group for a neuron ──
-function getModGroup(neuronId) {
-  const nd = state.neuronsData;
-  for (const [modKey, neurons] of Object.entries(nd.neurons_by_modulo)) {
-    if (neurons.includes(neuronId)) return modKey;
-  }
-  return null;
 }
 
 // ── Word-to-number parser ──
@@ -382,7 +311,7 @@ function parseNum(s) {
   return NaN;
 }
 
-// ── Compute answer for a cell ──
+// ── Answer for a cell ──
 function getAnswer(row, col) {
   const taskData = state.taskDataCache[state.task];
   const inps = taskData.inps;
@@ -392,15 +321,15 @@ function getAnswer(row, col) {
   let inpNum, sum, answerLabel;
 
   if (task === "months") {
-    inpNum = row + 1; // January=1
+    inpNum = row + 1;
     sum = inpNum + numVal;
     answerLabel = inps[(row + numVal) % 12];
   } else if (task === "weekdays") {
-    inpNum = row + 1; // Monday=1
+    inpNum = row + 1;
     sum = inpNum + numVal;
     answerLabel = inps[(row + numVal) % 7];
   } else if (task === "hours") {
-    inpNum = parseInt(inps[row]); // 0-23
+    inpNum = parseInt(inps[row]);
     sum = inpNum + numVal;
     answerLabel = String(sum % 24).padStart(2, '0') + ":00";
   } else { // addition
@@ -409,19 +338,440 @@ function getAnswer(row, col) {
     answerLabel = String(sum);
   }
 
-  const modKey = getModGroup(state.neuron);
-  const T = modKey ? parseInt(modKey.split("_")[1]) : null;
-  const residue = T !== null ? sum % T : null;
-
-  return { answerLabel, inpNum, numVal, sum, residue, T };
+  return { answerLabel, inpNum, numVal, sum };
 }
 
-// ── Render one heatmap into a container ──
+// ── Populate dropdowns ──
+function populateTaskDropdown() {
+  const taskSel = document.getElementById("task-select");
+  taskSel.innerHTML = "";
+  state.neuronsData.tasks.forEach(t => {
+    const opt = document.createElement("option");
+    opt.value = t;
+    opt.textContent = t.charAt(0).toUpperCase() + t.slice(1);
+    if (t === state.task) opt.selected = true;
+    taskSel.appendChild(opt);
+  });
+}
+
+function populatePromptDropdowns() {
+  const taskData = state.taskDataCache[state.task];
+  const inpSel = document.getElementById("inp-select");
+  const numSel = document.getElementById("num-select");
+  inpSel.innerHTML = "";
+  numSel.innerHTML = "";
+
+  taskData.inps.forEach((v, i) => {
+    const opt = document.createElement("option");
+    opt.value = i;
+    opt.textContent = v;
+    if (i === state.row) opt.selected = true;
+    inpSel.appendChild(opt);
+  });
+  taskData.nums.forEach((v, i) => {
+    const opt = document.createElement("option");
+    opt.value = i;
+    opt.textContent = v;
+    if (i === state.col) opt.selected = true;
+    numSel.appendChild(opt);
+  });
+}
+
+// ── Prompt display ──
+function updatePromptDisplay() {
+  const taskData = state.taskDataCache[state.task];
+  const { r, c } = effectiveCell();
+  const inp = taskData.inps[r];
+  const num = taskData.nums[c];
+  const template = state.neuronsData.templates[state.task];
+  const prompt = template.replace("{input}", inp).replace("{number}", num);
+  const answer = getAnswer(r, c);
+
+  document.getElementById("prompt-text").textContent = prompt + " " + answer.answerLabel;
+  document.getElementById("prompt-meta").innerHTML =
+    `${inp} + ${num} = <strong>${answer.sum}</strong>`;
+}
+
+// ── Circle rendering ──
+const CIRCLE_SIZE = 200;
+const CIRCLE_MARGIN = 18;
+const CIRCLE_REF_RADIUS = (CIRCLE_SIZE - 2 * CIRCLE_MARGIN) / 2 * 0.85;
+const neuronColors = d3.schemeTableau10;
+
+function renderCircleForMod(svgEl, modKey) {
+  const svg = d3.select(svgEl);
+  svg.selectAll("*").remove();
+  svg.attr("viewBox", `0 0 ${CIRCLE_SIZE} ${CIRCLE_SIZE}`)
+     .attr("preserveAspectRatio", "xMidYMid meet");
+
+  const nd = state.neuronsData;
+  const taskData = state.taskDataCache[state.task];
+  const T = parseInt(modKey.split("_")[1]);
+  const groupNeurons = nd.neurons_by_modulo[modKey] || [];
+  const downproj = nd.downproj[modKey] || {};
+
+  const cx = CIRCLE_SIZE / 2;
+  const cy = CIRCLE_SIZE / 2;
+  const g = svg.append("g").attr("transform", `translate(${cx},${cy})`);
+
+  // Probe axes (drawn behind the unit circle so arrows sit on top).
+  // Labels appear only on hover over the axis line.
+  const axisExt = CIRCLE_REF_RADIUS + 28;
+  const axisEntries = [
+    {
+      x1: -axisExt, y1: 0, x2: axisExt, y2: 0,
+      labelX: axisExt - 1, labelY: 8, anchor: "end", text: "cosine probe",
+    },
+    {
+      x1: 0, y1: -axisExt, x2: 0, y2: axisExt,
+      labelX: 3, labelY: -axisExt + 2, anchor: "start", text: "sine probe",
+    },
+  ];
+  axisEntries.forEach(a => {
+    g.append("line")
+      .attr("x1", a.x1).attr("y1", a.y1).attr("x2", a.x2).attr("y2", a.y2)
+      .attr("stroke", "#ececec").attr("stroke-width", 0.8);
+    const hit = g.append("line")
+      .attr("x1", a.x1).attr("y1", a.y1).attr("x2", a.x2).attr("y2", a.y2)
+      .attr("stroke", "transparent").attr("stroke-width", 10)
+      .style("cursor", "help");
+    let label = null;
+    hit.on("mouseenter", () => {
+      label = g.append("text")
+        .attr("class", "axis-hover-label")
+        .attr("x", a.labelX).attr("y", a.labelY)
+        .attr("text-anchor", a.anchor)
+        .attr("font-size", "7.5px")
+        .attr("font-style", "italic")
+        .attr("fill", "#888")
+        .attr("pointer-events", "none")
+        .text(a.text);
+    });
+    hit.on("mouseleave", () => {
+      if (label) { label.remove(); label = null; }
+    });
+  });
+
+  // Reference unit circle
+  g.append("circle")
+    .attr("r", CIRCLE_REF_RADIUS)
+    .attr("fill", "none")
+    .attr("stroke", "#ddd")
+    .attr("stroke-width", 1);
+
+  // Residue markers; labels at spaced intervals for large T.
+  const markerR = T > 20 ? 1.2 : 2.2;
+  function showLabel(r) {
+    if (T <= 10) return true;
+    if (T === 20) return r % 2 === 0;   // every even number
+    if (T === 50) return r % 5 === 0;   // count by 5
+    if (T === 100) return r % 10 === 0; // count by 10
+    return r === 0;
+  }
+  for (let r = 0; r < T; r++) {
+    const angle = (2 * Math.PI * r) / T;
+    const mx = CIRCLE_REF_RADIUS * Math.cos(angle);
+    const my = -CIRCLE_REF_RADIUS * Math.sin(angle);
+    g.append("circle")
+      .attr("cx", mx).attr("cy", my)
+      .attr("r", markerR)
+      .attr("fill", "#bbb")
+      .attr("stroke", "#999")
+      .attr("stroke-width", 0.4);
+    if (showLabel(r)) {
+      const labelR = CIRCLE_REF_RADIUS + 11;
+      g.append("text")
+        .attr("x", labelR * Math.cos(angle))
+        .attr("y", -labelR * Math.sin(angle))
+        .attr("text-anchor", "middle")
+        .attr("dominant-baseline", "central")
+        .attr("font-size", "10.5px")
+        .attr("fill", "#888")
+        .text(r);
+    }
+  }
+
+  // Answer star
+  const eff = effectiveCell();
+  const answer = getAnswer(eff.r, eff.c);
+  const residue = answer.sum % T;
+  const starAngle = (2 * Math.PI * residue) / T;
+  const starX = CIRCLE_REF_RADIUS * Math.cos(starAngle);
+  const starY = -CIRCLE_REF_RADIUS * Math.sin(starAngle);
+  const sr = 4.5;
+  let starPath = "";
+  for (let i = 0; i < 10; i++) {
+    const a = -Math.PI / 2 + (Math.PI * i / 5);
+    const rd = i % 2 === 0 ? sr : sr * 0.4;
+    const px = starX + rd * Math.cos(a);
+    const py = starY + rd * Math.sin(a);
+    starPath += (i === 0 ? "M" : "L") + px + "," + py;
+  }
+  starPath += "Z";
+  g.append("path")
+    .attr("d", starPath)
+    .attr("fill", "#999")
+    .attr("stroke", "#666")
+    .attr("stroke-width", 0.4);
+
+  // Arrow-head marker defs
+  const defs = svg.append("defs");
+  neuronColors.forEach((color, i) => {
+    defs.append("marker")
+      .attr("id", `arrowhead-${modKey}-${i}`)
+      .attr("viewBox", "0 0 10 10")
+      .attr("refX", 8).attr("refY", 5)
+      .attr("markerWidth", 3.5).attr("markerHeight", 3.5)
+      .attr("orient", "auto-start-reverse")
+      .append("path")
+      .attr("d", "M 0 0 L 10 5 L 0 10 z")
+      .attr("fill", color);
+  });
+
+  // Gather and draw arrows
+  const vectors = [];
+  let sumC = 0, sumS = 0;
+  groupNeurons.forEach((nid, idx) => {
+    const coords = downproj[String(nid)];
+    if (!coords) return;
+    const [c, s] = coords;
+    const neuronActs = taskData.neurons[String(nid)];
+    const activation = neuronActs ? neuronActs.both[eff.r][eff.c] : 0;
+    const sc = c * activation;
+    const ss = s * activation;
+    sumC += sc;
+    sumS += ss;
+    vectors.push({ nid, sc, ss, activation, idx, mag: Math.sqrt(sc * sc + ss * ss) });
+  });
+
+  // Draw lowest-magnitude first so largest arrows are on top for click hit-lines
+  vectors.sort((a, b) => a.mag - b.mag);
+
+  const scale = CIRCLE_REF_RADIUS;
+  const isNeuronSelectedInThis = state.selectedNeuron !== null && state.selectedMod === modKey;
+
+  vectors.forEach(v => {
+    if (v.mag < 1e-6) return;
+    const ex = v.sc * scale;
+    const ey = -v.ss * scale;
+    const color = neuronColors[v.idx % neuronColors.length];
+    const isSelected = v.nid === state.selectedNeuron;
+    const isDimmed = isNeuronSelectedInThis && !isSelected;
+    const strokeW = isSelected ? 2.2 : 1.1;
+    const opacity = isDimmed ? 0.2 : (isSelected ? 1.0 : 0.75);
+
+    const arrow = g.append("line")
+      .attr("class", `arrow arrow-${v.nid}`)
+      .attr("x1", 0).attr("y1", 0)
+      .attr("x2", ex).attr("y2", ey)
+      .attr("stroke", color)
+      .attr("stroke-width", strokeW)
+      .attr("opacity", opacity)
+      .attr("marker-end", `url(#arrowhead-${modKey}-${v.idx % neuronColors.length})`);
+
+    // Transparent hit-line for hover/click
+    const hit = g.append("line")
+      .attr("x1", 0).attr("y1", 0)
+      .attr("x2", ex).attr("y2", ey)
+      .attr("stroke", "transparent")
+      .attr("stroke-width", 14)
+      .style("cursor", "pointer");
+
+    hit.on("mouseenter", (event) => {
+      // Bold this arrow, dim siblings in the same circle
+      arrow.attr("stroke-width", 2.5).attr("opacity", 1.0);
+      g.selectAll(".arrow").each(function() {
+        const el = d3.select(this);
+        if (!el.classed(`arrow-${v.nid}`)) {
+          el.attr("opacity", 0.18);
+        }
+      });
+      // Tooltip
+      const tip = document.getElementById("tooltip");
+      tip.innerHTML = `<b>Neuron ${v.nid}</b> &middot; Period ${modKey.replace("mod_", " ")}<br>act: ${v.activation.toFixed(3)}`;
+      tip.style.left = (event.pageX + 14) + "px";
+      tip.style.top = (event.pageY - 36) + "px";
+      tip.style.display = "block";
+    });
+
+    hit.on("mousemove", (event) => {
+      const tip = document.getElementById("tooltip");
+      tip.style.left = (event.pageX + 14) + "px";
+      tip.style.top = (event.pageY - 36) + "px";
+    });
+
+    hit.on("mouseleave", () => {
+      document.getElementById("tooltip").style.display = "none";
+      // Rerender this circle to reset styles based on current state
+      renderCircleForMod(svgEl, modKey);
+    });
+
+    hit.on("click", (event) => {
+      event.stopPropagation();
+      toggleNeuronSelection(v.nid, modKey);
+    });
+  });
+
+  // Sum vector (dashed)
+  const sumEx = sumC * scale;
+  const sumEy = -sumS * scale;
+  if (Math.abs(sumC) > 1e-6 || Math.abs(sumS) > 1e-6) {
+    g.append("line")
+      .attr("x1", 0).attr("y1", 0)
+      .attr("x2", sumEx).attr("y2", sumEy)
+      .attr("stroke", "#333")
+      .attr("stroke-width", 1.4)
+      .attr("stroke-dasharray", "3,2")
+      .attr("opacity", 0.7)
+      .style("pointer-events", "none");
+  }
+}
+
+function renderAllCircles() {
+  const grid = document.getElementById("circles-grid");
+  grid.innerHTML = "";
+  const eff = effectiveCell();
+  const answer = state.taskDataCache[state.task] ? getAnswer(eff.r, eff.c) : null;
+  MOD_ORDER.forEach(modKey => {
+    const T = parseInt(modKey.split("_")[1]);
+    const cell = document.createElement("div");
+    cell.className = "circle-cell" + (modKey === state.selectedMod ? " circle-cell-selected" : "");
+    const title = document.createElement("h4");
+    title.textContent = `T = ${T}`;
+    cell.appendChild(title);
+    if (answer) {
+      const sub = document.createElement("div");
+      sub.className = "circle-residue";
+      sub.innerHTML = `${answer.sum} mod ${T} = <strong>${answer.sum % T}</strong>`;
+      cell.appendChild(sub);
+    }
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    cell.appendChild(svg);
+    grid.appendChild(cell);
+    renderCircleForMod(svg, modKey);
+  });
+}
+
+// ── Neuron selection / heatmap section ──
+function toggleNeuronSelection(nid, modKey) {
+  if (state.selectedNeuron === nid) {
+    state.selectedNeuron = null;
+    state.selectedMod = null;
+  } else {
+    state.selectedNeuron = nid;
+    state.selectedMod = modKey;
+  }
+  state.hoveredCell = null;
+  renderAllCircles();
+  renderHeatmapSection();
+}
+
+// Switch to a different (input, number) prompt while keeping the
+// currently-selected neuron. Used by both the dropdowns and clicks
+// on heatmap cells.
+function selectCell(row, col) {
+  state.row = row;
+  state.col = col;
+  state.hoveredCell = null;
+  document.getElementById("inp-select").value = String(row);
+  document.getElementById("num-select").value = String(col);
+  updatePromptDisplay();
+  renderAllCircles();
+  if (state.selectedNeuron !== null) renderHeatmapSection();
+}
+
+// SVG rect handles for the lime-green cell highlight on each heatmap.
+// Populated each time renderOneHeatmap runs; lets hover updates move the
+// square without rebuilding the heatmap canvas.
+let heatmapHighlights = [];
+
+function updateCellHighlights(r, c) {
+  heatmapHighlights.forEach(({ rect, margin, cellSize, nRows, nCols }) => {
+    if (r >= 0 && r < nRows && c >= 0 && c < nCols) {
+      rect.attr("x", margin.left + c * cellSize + 1)
+          .attr("y", margin.top + r * cellSize + 1)
+          .attr("display", null);
+    } else {
+      rect.attr("display", "none");
+    }
+  });
+}
+
+// Cheap hover-driven preview: updates circles + prompt + green square only.
+// Heatmap canvases stay rendered against the click-locked neuron data.
+function previewCell(r, c) {
+  if (state.hoveredCell && state.hoveredCell.r === r && state.hoveredCell.c === c) return;
+  state.hoveredCell = { r, c };
+  updatePromptDisplay();
+  renderAllCircles();
+  updateCellHighlights(r, c);
+}
+
+function clearPreview() {
+  if (!state.hoveredCell) return;
+  state.hoveredCell = null;
+  updatePromptDisplay();
+  renderAllCircles();
+  updateCellHighlights(state.row, state.col);
+}
+
+function renderHeatmapSection() {
+  const wrapper = document.getElementById("heatmap-wrapper");
+  heatmapHighlights = [];  // discard stale rect refs from prior render
+  if (state.selectedNeuron === null) {
+    wrapper.classList.remove("visible");
+    document.getElementById("heatmap-combined").innerHTML = "";
+    document.getElementById("heatmap-gate").innerHTML = "";
+    document.getElementById("heatmap-up").innerHTML = "";
+    return;
+  }
+  wrapper.classList.add("visible");
+
+  const header = document.getElementById("selected-neuron-header");
+  header.innerHTML =
+    `Neuron <strong>${state.selectedNeuron}</strong> &middot; Period ${state.selectedMod.replace("mod_", " ")} &middot; Activations Across All Prompts` +
+    `<span class="deselect">click on an arrow above to select another neuron</span>`;
+
+  const combined = document.getElementById("heatmap-combined");
+  const gate = document.getElementById("heatmap-gate");
+  const up = document.getElementById("heatmap-up");
+  combined.innerHTML = "";
+  gate.innerHTML = "";
+  up.innerHTML = "";
+
+  const primaryW = Math.min(640, availableWidth(combined));
+  renderOneHeatmap(combined, "both", null, primaryW);
+
+  renderOneHeatmap(gate, "gate", "Gate Activations", primaryW);
+  renderOneHeatmap(up, "up", "Up Activations", primaryW);
+}
+
+// ── Heatmap rendering (ported read-only from demo_draft1) ──
+function computeMargin(maxW) {
+  return maxW < 500
+    ? { top: 8, right: 8, bottom: 50, left: 40 }
+    : { top: 10, right: 10, bottom: 60, left: 80 };
+}
+const maxCanvasH = 500;
+
+function getColorScale(actType, data2d) {
+  // All three heatmaps use matplotlib's RdBu_r: blue=negative, red=positive.
+  // d3.interpolateRdBu is red→blue, so invert t to get the reversed direction.
+  const flat = data2d.flat();
+  const maxAbs = d3.max(flat, d => Math.abs(d));
+  const bound = Math.max(maxAbs, 0.1);
+  return d3.scaleDiverging(t => d3.interpolateRdBu(1 - t)).domain([-bound, 0, bound]);
+}
+
+function availableWidth(el) {
+  const w = el && el.clientWidth;
+  return w && w > 0 ? w : Math.max(260, window.innerWidth - 32);
+}
+
 function renderOneHeatmap(parentEl, key, label, maxW) {
   const taskData = state.taskDataCache[state.task];
   if (!taskData) return;
-
-  const neuronData = taskData.neurons[String(state.neuron)];
+  const neuronData = taskData.neurons[String(state.selectedNeuron)];
   if (!neuronData) return;
 
   const grid = neuronData[key];
@@ -429,10 +779,8 @@ function renderOneHeatmap(parentEl, key, label, maxW) {
   const nCols = grid[0].length;
   const inps = taskData.inps;
   const nums = taskData.nums;
-  const tooltip = document.getElementById("tooltip");
   const margin = computeMargin(maxW);
 
-  // Section wrapper
   const section = document.createElement("div");
   section.className = "heatmap-section";
 
@@ -445,7 +793,6 @@ function renderOneHeatmap(parentEl, key, label, maxW) {
     section.appendChild(title);
   }
 
-  // Compute cell sizes
   const maxCellW = Math.floor((maxW - margin.left - margin.right) / nCols);
   const maxCellH = Math.floor((maxCanvasH - margin.top - margin.bottom) / nRows);
   const cellSize = Math.max(3, Math.min(maxCellW, maxCellH, 40));
@@ -454,28 +801,57 @@ function renderOneHeatmap(parentEl, key, label, maxW) {
   const totalW = plotW + margin.left + margin.right;
   const totalH = plotH + margin.top + margin.bottom;
 
-  // Wrapper: heatmap + vertical colorbar side by side
   const wrapper = document.createElement("div");
   wrapper.style.cssText = "display:flex;align-items:stretch;gap:0.5rem";
 
-  // Container
   const container = document.createElement("div");
   container.style.position = "relative";
   container.style.width = totalW + "px";
   container.style.height = totalH + "px";
   wrapper.appendChild(container);
 
-  // Canvas
   const canvas = document.createElement("canvas");
   canvas.width = totalW;
   canvas.height = totalH;
   canvas.style.width = totalW + "px";
   canvas.style.height = totalH + "px";
   canvas.style.display = "block";
-  canvas.style.cursor = "crosshair";
   container.appendChild(canvas);
 
-  // SVG for axes (overlay)
+  // Hover preview + click commit. Tooltip and the lime-green square move
+  // live on hover without rebuilding the canvas.
+  function cellAt(event) {
+    const c = Math.floor((event.offsetX - margin.left) / cellSize);
+    const r = Math.floor((event.offsetY - margin.top) / cellSize);
+    if (r >= 0 && r < nRows && c >= 0 && c < nCols) return { r, c };
+    return null;
+  }
+  canvas.addEventListener("click", (event) => {
+    const hit = cellAt(event);
+    if (hit) selectCell(hit.r, hit.c);
+  });
+  canvas.addEventListener("mousemove", (event) => {
+    const tip = document.getElementById("tooltip");
+    const hit = cellAt(event);
+    if (hit) {
+      canvas.style.cursor = "pointer";
+      tip.innerHTML = `Jump to <b>${inps[hit.r]}</b> + <b>${nums[hit.c]}</b>`;
+      tip.style.left = (event.pageX + 14) + "px";
+      tip.style.top = (event.pageY - 32) + "px";
+      tip.style.display = "block";
+      previewCell(hit.r, hit.c);
+    } else {
+      canvas.style.cursor = "default";
+      tip.style.display = "none";
+    }
+  });
+  canvas.addEventListener("mouseleave", () => {
+    document.getElementById("tooltip").style.display = "none";
+    canvas.style.cursor = "default";
+    // Don't clearPreview here — moving between heatmaps would flicker.
+    // The wrapper-level mouseleave handles "fully exited heatmap area".
+  });
+
   const svg = d3.select(container).append("svg")
     .attr("width", totalW)
     .attr("height", totalH)
@@ -484,7 +860,6 @@ function renderOneHeatmap(parentEl, key, label, maxW) {
     .style("left", 0)
     .style("pointer-events", "none");
 
-  // Draw cells
   const ctx = canvas.getContext("2d");
   const colorScale = getColorScale(key, grid);
 
@@ -495,19 +870,23 @@ function renderOneHeatmap(parentEl, key, label, maxW) {
     }
   }
 
-  // Highlight clicked cell
-  if (state.clickedCell && state.clickedCell.row < nRows && state.clickedCell.col < nCols) {
-    const { row, col } = state.clickedCell;
-    ctx.strokeStyle = "#ff3333";
-    ctx.lineWidth = 2;
-    ctx.strokeRect(
-      margin.left + col * cellSize + 1,
-      margin.top + row * cellSize + 1,
-      cellSize - 2, cellSize - 2
-    );
-  }
+  // Lime-green square — drawn as an SVG rect so hover can move it cheaply
+  // without redrawing the heatmap canvas. Position uses the current
+  // effective cell (committed cell on initial render; preview later).
+  const eff = effectiveCell();
+  const inBounds = eff.r < nRows && eff.c < nCols;
+  const highlightRect = svg.append("rect")
+    .attr("class", "cell-highlight")
+    .attr("width", cellSize - 2)
+    .attr("height", cellSize - 2)
+    .attr("fill", "none")
+    .attr("stroke", "#39ff14")
+    .attr("stroke-width", 2)
+    .attr("display", inBounds ? null : "none")
+    .attr("x", inBounds ? margin.left + eff.c * cellSize + 1 : 0)
+    .attr("y", inBounds ? margin.top + eff.r * cellSize + 1 : 0);
+  heatmapHighlights.push({ rect: highlightRect, margin, cellSize, nRows, nCols });
 
-  // Axes
   const g = svg.append("g");
   const xStep = nCols > 30 ? Math.ceil(nCols / 15) : (nCols > 14 ? 2 : 1);
   const yStep = nRows > 30 ? Math.ceil(nRows / 15) : (nRows > 14 ? 2 : 1);
@@ -521,7 +900,6 @@ function renderOneHeatmap(parentEl, key, label, maxW) {
       .attr("transform", `rotate(-45, ${margin.left + j * cellSize + cellSize / 2}, ${margin.top + plotH + 12})`)
       .text(nums[j]);
   }
-
   for (let i = 0; i < nRows; i += yStep) {
     g.append("text")
       .attr("class", "axis-label-y")
@@ -531,10 +909,9 @@ function renderOneHeatmap(parentEl, key, label, maxW) {
       .text(inps[i]);
   }
 
-  // Vertical colorbar (right of heatmap)
+  // Vertical colorbar
   const legendDiv = document.createElement("div");
   legendDiv.style.cssText = "display:flex;flex-direction:column;align-items:center;justify-content:center;padding-top:" + margin.top + "px;padding-bottom:" + margin.bottom + "px";
-
   const domain = colorScale.domain();
   const lo = domain[0], hi = domain[domain.length - 1];
 
@@ -548,11 +925,9 @@ function renderOneHeatmap(parentEl, key, label, maxW) {
   legendCanvas.style.cssText = "border:1px solid #ddd;border-radius:2px";
   const lctx = legendCanvas.getContext("2d");
   for (let i = 0; i < legendH; i++) {
-    // top = max, bottom = min
     lctx.fillStyle = colorScale(hi + (lo - hi) * (i / (legendH - 1)));
     lctx.fillRect(0, i, 14, 1);
   }
-
   const minSpan = document.createElement("span");
   minSpan.style.cssText = "font-size:0.7rem;color:#666;margin-top:0.2rem";
   minSpan.textContent = lo.toFixed(2);
@@ -564,541 +939,60 @@ function renderOneHeatmap(parentEl, key, label, maxW) {
 
   section.appendChild(wrapper);
   parentEl.appendChild(section);
-
-  // Mouse events (hover-based; skipped on touch devices)
-  if (!isTouch) {
-    canvas.addEventListener("mousemove", (event) => {
-      const rect = canvas.getBoundingClientRect();
-      const x = event.clientX - rect.left - margin.left;
-      const y = event.clientY - rect.top - margin.top;
-      const c = Math.floor(x / cellSize);
-      const r = Math.floor(y / cellSize);
-
-      if (r >= 0 && r < nRows && c >= 0 && c < nCols) {
-        // Tooltip
-        const ans = getAnswer(r, c);
-        tooltip.innerHTML = `<b>${inps[r]}</b> + <b>${nums[c]}</b><br>sum: ${ans.sum}` +
-          (ans.T !== null ? `, mod ${ans.T}: ${ans.residue}` : '');
-        tooltip.style.left = (event.pageX + 14) + "px";
-        tooltip.style.top = (event.pageY - 32) + "px";
-        tooltip.style.display = "block";
-
-        // Update circle + prompt on hover (if not locked)
-        if (!state.clickedCell) {
-          const prev = state.hoveredCell;
-          if (!prev || prev.row !== r || prev.col !== c) {
-            state.hoveredCell = { row: r, col: c };
-            showPrompt(r, c);
-            renderCircle(r, c);
-          }
-        }
-      } else {
-        tooltip.style.display = "none";
-      }
-    });
-
-    canvas.addEventListener("mouseleave", () => {
-      tooltip.style.display = "none";
-      if (!state.clickedCell) {
-        state.hoveredCell = null;
-        resetPrompt();
-        renderCircleStatic();
-      }
-    });
-  }
-
-  canvas.addEventListener("click", (event) => {
-    const rect = canvas.getBoundingClientRect();
-    const x = event.clientX - rect.left - margin.left;
-    const y = event.clientY - rect.top - margin.top;
-    const c = Math.floor(x / cellSize);
-    const r = Math.floor(y / cellSize);
-
-    if (r >= 0 && r < nRows && c >= 0 && c < nCols) {
-      state.clickedCell = { row: r, col: c };
-      showPrompt(r, c);
-      renderCircle(r, c);
-      renderAllHeatmaps();
-    }
-  });
-}
-
-// ── Render all heatmaps ──
-function availableWidth(el) {
-  const w = el && el.clientWidth;
-  return w && w > 0 ? w : Math.max(260, window.innerWidth - 32);
-}
-
-function renderAllHeatmaps() {
-  // Combined (primary)
-  const combined = document.getElementById("heatmap-combined");
-  combined.innerHTML = "";
-  const primaryW = Math.min(640, availableWidth(combined));
-  renderOneHeatmap(combined, "both", null, primaryW);
-
-  // Gate & Up (secondary, side by side on desktop, stacked on mobile)
-  const gate = document.getElementById("heatmap-gate");
-  const up = document.getElementById("heatmap-up");
-  if (gate && up) {
-    gate.innerHTML = "";
-    up.innerHTML = "";
-    const gateW = Math.min(480, availableWidth(gate) || primaryW * 0.75);
-    const upW = Math.min(480, availableWidth(up) || primaryW * 0.75);
-    renderOneHeatmap(gate, "gate", "Gate Activations", gateW);
-    renderOneHeatmap(up, "up", "Up Activations", upW);
-  }
-}
-
-function clearSelection() {
-  if (!state.clickedCell) return;
-  state.clickedCell = null;
-  resetPrompt();
-  renderAllHeatmaps();
-  renderCircleStatic();
-}
-
-function resetPrompt() {
-  document.getElementById("prompt-text").textContent = "";
-  const verb = isTouch ? "Tap" : "Hover or click";
-  document.getElementById("prompt-meta").innerHTML =
-    `<em style="color:#999">${verb} a heatmap cell to see specific forward pass activations</em>`;
-}
-
-// ── Show prompt ──
-function showPrompt(row, col) {
-  const taskData = state.taskDataCache[state.task];
-  const neuronData = taskData.neurons[String(state.neuron)];
-  const inp = taskData.inps[row];
-  const num = taskData.nums[col];
-  const template = state.neuronsData.templates[state.task];
-  const prompt = template.replace("{input}", inp).replace("{number}", num);
-
-  const answer = getAnswer(row, col);
-  let answerSuffix = ` ${answer.answerLabel}` // (sum: ${answer.sum}` +
-    // (answer.T !== null ? `, mod ${answer.T}: ${answer.residue}` : '') + ')';
-
-  const locked = state.clickedCell && state.clickedCell.row === row && state.clickedCell.col === col;
-  document.getElementById("prompt-text").textContent = prompt + answerSuffix;
-  document.getElementById("prompt-meta").innerHTML =
-    // `Neuron <strong>${state.neuron}</strong> &middot; ` +
-    // `combined: <strong>${neuronData.both[row][col]}</strong>, ` +
-    // `gate: <strong>${neuronData.gate[row][col]}</strong>, ` +
-    // `up: <strong>${neuronData.up[row][col]}</strong>` +
-    `${inp} + ${num} = <strong>${answer.sum}</strong>,` +
-    (answer.residue !== null ? ` mod ${answer.T} = <strong>${answer.residue}</strong>` : '') +
-    (locked ? ' &middot; <em style="color:#c44">locked</em>' : '');
-}
-
-// ── Render circle plot ──
-const circleSvgSize = 350;
-const circleMargin = 40;
-const circleRadius = (circleSvgSize - 2 * circleMargin) / 2;
-
-// Distinct colors for neurons
-const neuronColors = d3.schemeTableau10;
-
-function setCircleTitle(modKey) {
-  const base = "Fourier Probe Subspace";
-  const el = document.getElementById("circle-title");
-  if (modKey) {
-    const T = modKey.replace("mod_", "");
-    el.textContent = `${base} for T=${T}`;
-  } else {
-    el.textContent = base;
-  }
-}
-
-function drawProbeAxes(g, refRadius) {
-  const axisExt = refRadius + 30;
-  g.append("line")
-    .attr("x1", -axisExt).attr("y1", 0).attr("x2", axisExt).attr("y2", 0)
-    .attr("stroke", "#e8e8e8").attr("stroke-width", 1);
-  g.append("line")
-    .attr("x1", 0).attr("y1", -axisExt).attr("x2", 0).attr("y2", axisExt)
-    .attr("stroke", "#e8e8e8").attr("stroke-width", 1);
-  g.append("text")
-    .attr("x", axisExt).attr("y", 14)
-    .attr("text-anchor", "end")
-    .attr("font-size", "0.65rem")
-    .attr("font-style", "italic")
-    .attr("fill", "#aaa")
-    .text("Cosine Probe");
-  g.append("text")
-    .attr("x", 6).attr("y", -axisExt + 4)
-    .attr("text-anchor", "start")
-    .attr("font-size", "0.65rem")
-    .attr("font-style", "italic")
-    .attr("fill", "#aaa")
-    .text("Sine Probe");
-}
-
-function renderCircle(row, col) {
-  const svg = d3.select("#circle-svg");
-  svg.selectAll("*").remove();
-  document.getElementById("circle-hint").style.display = "none";
-
-  const nd = state.neuronsData;
-  const taskData = state.taskDataCache[state.task];
-  const modKey = getModGroup(state.neuron);
-  if (!modKey) return;
-
-  const T = parseInt(modKey.split("_")[1]);
-  const groupNeurons = nd.neurons_by_modulo[modKey];
-  const downproj = nd.downproj[modKey];
-
-  // Gather scaled vectors
-  const vectors = [];
-  let sumC = 0, sumS = 0;
-  let maxMag = 0;
-
-  groupNeurons.forEach((nid, idx) => {
-    const coords = downproj[String(nid)];
-    if (!coords) return;
-    const [c, s] = coords;
-    const neuronActs = taskData.neurons[String(nid)];
-    // Always use "both" activations for the circle regardless of heatmap actType
-    const activation = neuronActs ? neuronActs.both[row][col] : 0;
-    const sc = c * activation;
-    const ss = s * activation;
-    sumC += sc;
-    sumS += ss;
-    const mag = Math.sqrt(sc * sc + ss * ss);
-    if (mag > maxMag) maxMag = mag;
-    vectors.push({ nid, c: sc, s: ss, staticC: c, staticS: s, activation, idx });
-  });
-
-  // Fixed unit circle: refRadius pixels = magnitude 1 in data coords
-  const refRadius = circleRadius * 0.85;
-  const scale = refRadius; // 1 data unit = refRadius pixels
-
-  const cx = circleSvgSize / 2;
-  const cy = circleSvgSize / 2;
-
-  const g = svg.append("g").attr("transform", `translate(${cx},${cy})`);
-
-  // Reference circle = unit circle
-  g.append("circle")
-    .attr("r", refRadius)
-    .attr("fill", "none")
-    .attr("stroke", "#ddd")
-    .attr("stroke-width", 1);
-
-  drawProbeAxes(g, refRadius);
-
-  // Residue class markers on unit circle
-  const labelStep = T > 20 ? 5 : 1;
-  for (let r = 0; r < T; r++) {
-    const angle = (2 * Math.PI * r) / T; // 0 at right (standard)
-    const mx = refRadius * Math.cos(angle);
-    const my = -refRadius * Math.sin(angle);
-    g.append("circle")
-      .attr("cx", mx).attr("cy", my)
-      .attr("r", T > 20 ? 2 : 3.5)
-      .attr("fill", "#bbb")
-      .attr("stroke", "#999")
-      .attr("stroke-width", 0.5);
-    // Label (skip some for large T)
-    if (r % labelStep === 0) {
-      const labelR = refRadius + 14;
-      g.append("text")
-        .attr("x", labelR * Math.cos(angle))
-        .attr("y", -labelR * Math.sin(angle))
-        .attr("text-anchor", "middle")
-        .attr("dominant-baseline", "central")
-        .attr("font-size", "0.65rem")
-        .attr("fill", "#888")
-        .text(r);
-    }
-  }
-
-  // Answer star on unit circle
-  const answer = getAnswer(row, col);
-  if (answer.residue !== null) {
-    const starAngle = (2 * Math.PI * answer.residue) / T;
-    const starX = refRadius * Math.cos(starAngle);
-    const starY = -refRadius * Math.sin(starAngle);
-    const sr = 9; // star outer radius
-    let path = "";
-    for (let i = 0; i < 10; i++) {
-      const a = -Math.PI / 2 + (Math.PI * i / 5);
-      const rd = i % 2 === 0 ? sr : sr * 0.4;
-      const px = starX + rd * Math.cos(a);
-      const py = starY + rd * Math.sin(a);
-      path += (i === 0 ? "M" : "L") + px + "," + py;
-    }
-    path += "Z";
-    g.append("path")
-      .attr("d", path)
-      .attr("fill", "#999")
-      .attr("stroke", "#666")
-      .attr("stroke-width", 0.5);
-  }
-
-  // Arrow marker definitions (one per neuron color)
-  const defs = svg.append("defs");
-  neuronColors.forEach((color, i) => {
-    defs.append("marker")
-      .attr("id", `arrowhead-${i}`)
-      .attr("viewBox", "0 0 10 10")
-      .attr("refX", 8).attr("refY", 5)
-      .attr("markerWidth", 5).attr("markerHeight", 5)
-      .attr("orient", "auto-start-reverse")
-      .append("path")
-      .attr("d", "M 0 0 L 10 5 L 0 10 z")
-      .attr("fill", color);
-  });
-
-  // Draw neuron arrows
-  const locked = !!state.clickedCell;
-  vectors.forEach(v => {
-    const ex = v.c * scale;
-    const ey = -v.s * scale; // flip y for SVG
-    const isSelected = v.nid === state.neuron;
-    const color = neuronColors[v.idx % neuronColors.length];
-    const opacity = isSelected ? 1.0 : 0.5;
-    const strokeW = isSelected ? 2.5 : 1.5;
-
-    if (Math.abs(v.c) < 1e-6 && Math.abs(v.s) < 1e-6) return;
-
-    g.append("line")
-      .attr("x1", 0).attr("y1", 0)
-      .attr("x2", ex).attr("y2", ey)
-      .attr("stroke", color)
-      .attr("stroke-width", strokeW)
-      .attr("opacity", opacity)
-      .attr("marker-end", `url(#arrowhead-${v.idx % neuronColors.length})`);
-
-    // In locked mode: transparent hit line reveals the neuron id on arrow hover
-    if (locked) {
-      const labelOffset = 10;
-      const ang = Math.atan2(ey, ex);
-      const lx = ex + labelOffset * Math.cos(ang);
-      const ly = ey + labelOffset * Math.sin(ang);
-
-      const hit = g.append("line")
-        .attr("x1", 0).attr("y1", 0)
-        .attr("x2", ex).attr("y2", ey)
-        .attr("stroke", "transparent")
-        .attr("stroke-width", 12)
-        .style("cursor", "pointer");
-
-      let label = null;
-      hit.on("mouseenter", () => {
-        label = g.append("text")
-          .attr("x", lx).attr("y", ly)
-          .attr("text-anchor", "middle")
-          .attr("dominant-baseline", "central")
-          .attr("font-size", isSelected ? "0.7rem" : "0.6rem")
-          .attr("font-weight", isSelected ? "bold" : "normal")
-          .attr("fill", color)
-          .attr("pointer-events", "none")
-          .text(v.nid);
-      });
-      hit.on("mouseleave", () => {
-        if (label) { label.remove(); label = null; }
-      });
-    }
-  });
-
-  // Sum vector (dashed)
-  const sumEx = sumC * scale;
-  const sumEy = -sumS * scale;
-  if (Math.abs(sumC) > 1e-6 || Math.abs(sumS) > 1e-6) {
-    g.append("line")
-      .attr("x1", 0).attr("y1", 0)
-      .attr("x2", sumEx).attr("y2", sumEy)
-      .attr("stroke", "#333")
-      .attr("stroke-width", 2)
-      .attr("stroke-dasharray", "5,3")
-      .attr("opacity", 0.7);
-
-    g.append("text")
-      .attr("x", sumEx).attr("y", sumEy - 12)
-      .attr("text-anchor", "middle")
-      .attr("font-size", "0.7rem")
-      .attr("font-weight", "bold")
-      .attr("fill", "#333")
-      .text("sum");
-  }
-
-  // Mod label
-  setCircleTitle(modKey);
-  document.getElementById("circle-subtitle").textContent =
-    // `${modKey.replace("_", " ")} \u00b7 ${groupNeurons.length} neurons`;
-    `Period ${modKey.replace("mod_", " ")} Neurons \u00b7 Actual Forward Pass`;
-}
-
-function renderCircleStatic() {
-  // Show static (unscaled) down_proj coordinates before any click
-  const svg = d3.select("#circle-svg");
-  svg.selectAll("*").remove();
-
-  const nd = state.neuronsData;
-  const modKey = getModGroup(state.neuron);
-  if (!modKey || !nd.downproj[modKey]) {
-    setCircleTitle(null);
-    document.getElementById("circle-subtitle").textContent = "";
-    document.getElementById("circle-hint").style.display = "block";
-    return;
-  }
-
-  const T = parseInt(modKey.split("_")[1]);
-  const groupNeurons = nd.neurons_by_modulo[modKey];
-  const downproj = nd.downproj[modKey];
-
-  // Find max magnitude for scaling
-  let maxMag = 0;
-  groupNeurons.forEach(nid => {
-    const coords = downproj[String(nid)];
-    if (!coords) return;
-    const mag = Math.sqrt(coords[0] * coords[0] + coords[1] * coords[1]);
-    if (mag > maxMag) maxMag = mag;
-  });
-
-  // Fixed unit circle: refRadius pixels = magnitude 1 in data coords
-  const refRadius = circleRadius * 0.85;
-  const scale = refRadius;
-
-  const cx = circleSvgSize / 2;
-  const cy = circleSvgSize / 2;
-  const g = svg.append("g").attr("transform", `translate(${cx},${cy})`);
-
-  // Reference circle = unit circle
-  g.append("circle")
-    .attr("r", refRadius)
-    .attr("fill", "none")
-    .attr("stroke", "#ddd")
-    .attr("stroke-width", 1);
-
-  drawProbeAxes(g, refRadius);
-
-  // Residue class markers
-  const labelStep = T > 20 ? 5 : 1;
-  for (let r = 0; r < T; r++) {
-    const angle = (2 * Math.PI * r) / T; // 0 at right (standard)
-    const mx = refRadius * Math.cos(angle);
-    const my = -refRadius * Math.sin(angle);
-    g.append("circle").attr("cx", mx).attr("cy", my).attr("r", T > 20 ? 2 : 3.5)
-      .attr("fill", "#bbb").attr("stroke", "#999").attr("stroke-width", 0.5);
-    if (r % labelStep === 0) {
-      const labelR = refRadius + 14;
-      g.append("text")
-        .attr("x", labelR * Math.cos(angle)).attr("y", -labelR * Math.sin(angle))
-        .attr("text-anchor", "middle").attr("dominant-baseline", "central")
-        .attr("font-size", "0.65rem").attr("fill", "#888").text(r);
-    }
-  }
-
-  // Static neuron lines + dots
-  groupNeurons.forEach((nid, idx) => {
-    const coords = downproj[String(nid)];
-    if (!coords) return;
-    const [c, s] = coords;
-    const ex = c * scale;
-    const ey = -s * scale;
-    const isSelected = nid === state.neuron;
-    const color = neuronColors[idx % neuronColors.length];
-
-    // Line from origin to dot
-    g.append("line")
-      .attr("x1", 0).attr("y1", 0)
-      .attr("x2", ex).attr("y2", ey)
-      .attr("stroke", color)
-      .attr("stroke-width", isSelected ? 1.5 : 1)
-      .attr("opacity", isSelected ? 0.8 : 0.35);
-
-    g.append("circle")
-      .attr("cx", ex).attr("cy", ey)
-      .attr("r", isSelected ? 5 : 3.5)
-      .attr("fill", color)
-      .attr("opacity", isSelected ? 1 : 0.6)
-      .attr("stroke", isSelected ? "#333" : "none")
-      .attr("stroke-width", 1);
-
-    g.append("text")
-      .attr("x", ex).attr("y", ey - 10)
-      .attr("text-anchor", "middle")
-      .attr("font-size", isSelected ? "0.7rem" : "0.6rem")
-      .attr("font-weight", isSelected ? "bold" : "normal")
-      .attr("fill", color)
-      .attr("opacity", isSelected ? 1 : 0.7)
-      .text(nid);
-  });
-
-  setCircleTitle(modKey);
-  document.getElementById("circle-subtitle").textContent =
-    // `W_down weights for all period ${modKey.replace("mod_", " ")} neurons`;
-    `Period ${modKey.replace("mod_", " ")} Neurons \u00b7 Raw W_down Weights`;
-
-  document.getElementById("circle-hint").textContent = isTouch
-    ? "Tap a heatmap cell to see activation-scaled arrows"
-    : "Hover over a heatmap cell to see activation-scaled arrows";
-  document.getElementById("circle-hint").style.display = "block";
 }
 
 // ── Event wiring ──
-document.addEventListener("pointerdown", (event) => {
-  const safeIds = [
-    "heatmap-combined", "heatmap-gate", "heatmap-up",
-    "circle-svg", "prompt-display",
-  ];
-  const inSafe = safeIds.some(id => {
-    const el = document.getElementById(id);
-    return el && el.contains(event.target);
-  }) || event.target.closest(".circle-panel");
-  if (!inSafe) {
-    clearSelection();
-  }
-});
-
 function wireEvents() {
   document.getElementById("task-select").addEventListener("change", async (e) => {
     state.task = e.target.value;
-    state.clickedCell = null;
     state.hoveredCell = null;
-    resetPrompt();
-    document.getElementById("heatmap-combined").innerHTML = '<div class="loading">Loading data&hellip;</div>';
+    applyTaskDefaults(state.task);
+    document.getElementById("circles-grid").innerHTML =
+      '<div class="loading" style="grid-column: 1 / -1">Loading data&hellip;</div>';
     await loadTaskData(state.task);
-    renderAllHeatmaps();
-    renderCircleStatic();
+    populatePromptDropdowns();
+    updatePromptDisplay();
+    renderAllCircles();
+    renderHeatmapSection();
   });
 
-  document.getElementById("neuron-select").addEventListener("change", (e) => {
-    state.neuron = parseInt(e.target.value);
-    state.clickedCell = null;
-    state.hoveredCell = null;
-    resetPrompt();
-    renderAllHeatmaps();
-    renderCircleStatic();
+  document.getElementById("inp-select").addEventListener("change", (e) => {
+    selectCell(parseInt(e.target.value), state.col);
   });
 
-  // Collapsible toggle for Gate & Up
-  document.getElementById("secondary-toggle").addEventListener("click", () => {
-    const content = document.getElementById("secondary-content");
-    const arrow = document.getElementById("toggle-arrow");
-    const isOpen = content.style.display !== "none";
-    content.style.display = isOpen ? "none" : "block";
-    arrow.classList.toggle("open", !isOpen);
+  document.getElementById("num-select").addEventListener("change", (e) => {
+    selectCell(state.row, parseInt(e.target.value));
+  });
+
+  // When the cursor leaves the entire heatmap section (not just one canvas),
+  // revert the hover preview so circles + prompt snap back to the locked cell.
+  document.getElementById("heatmap-wrapper").addEventListener("mouseleave", () => {
+    document.getElementById("tooltip").style.display = "none";
+    clearPreview();
   });
 }
 
 // ── Init ──
 async function init() {
   await loadNeuronsData();
-  populateDropdowns();
-  wireEvents();
-  resetPrompt();
+  populateTaskDropdown();
   await loadTaskData(state.task);
-  renderAllHeatmaps();
-  renderCircleStatic();
+  applyTaskDefaults(state.task);
+  populatePromptDropdowns();
+  wireEvents();
+  updatePromptDisplay();
+  renderAllCircles();
+  renderHeatmapSection();
 }
 
-// ── Resize / orientation ──
 let resizeTimer = null;
 window.addEventListener("resize", () => {
   clearTimeout(resizeTimer);
   resizeTimer = setTimeout(() => {
-    if (state.taskDataCache[state.task]) renderAllHeatmaps();
+    if (state.taskDataCache[state.task]) {
+      renderAllCircles();
+      if (state.selectedNeuron !== null) renderHeatmapSection();
+    }
   }, 150);
 });
 

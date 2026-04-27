@@ -19,7 +19,7 @@ MODEL_SHARD = os.path.expanduser(
 )
 PROBE_DIR = (
     "/mnt/polished-lake/artifacts/fellows-shared/circleDAS/"
-    "fourier_probes/summation/mlp_output/sum_ab/layer_18/pos_last"
+    "fourier_probes/summation/resid/sum_ab/layer_18/pos_last"
 )
 
 TASKS = ["addition", "months", "weekdays", "hours"]
